@@ -39,6 +39,8 @@ class PerfilUpdate(BaseModel):
     username: str
     biografia: str
     ubicacion: str
+    avatar_url: str | None = None  # Nuevo campo (opcional)
+    banner_url: str | None = None  # Nuevo campo (opcional)
 
 # --- Valida el Token de Next.js ---
 def get_current_user(authorization: str = Header(None)):
@@ -64,7 +66,7 @@ def obtener_perfil(current_user = Depends(get_current_user)):
     """Obtiene los datos del perfil del usuario autenticado"""
     try:
         # Buscamos en la tabla 'usuarios' usando el ID validado del token
-        response = supabase.table("usuarios").select("nombre, username, biografia, ubicacion").eq("id_usuario", current_user.id).single().execute()
+        response = supabase.table("usuarios").select("nombre, username, biografia, ubicacion, avatar_url, banner_url").eq("id_usuario", current_user.id).single().execute()
         return response.data
     except Exception as e:
         raise HTTPException(status_code=404, detail="Perfil no encontrado")
@@ -77,9 +79,14 @@ def actualizar_perfil(perfil: PerfilUpdate, current_user = Depends(get_current_u
             "nombre": perfil.nombre,
             "username": perfil.username,
             "biografia": perfil.biografia,
-            "ubicacion": perfil.ubicacion
+            "ubicacion": perfil.ubicacion,
+            "avatar_url": perfil.avatar_url,  
+            "banner_url": perfil.banner_url   
         }).eq("id_usuario", current_user.id).execute()
         
-        return {"mensaje": "Perfil actualizado con éxito", "data": response.data[0]}
+        # SOLUCIÓN: Comprobamos de forma segura si Supabase nos devolvió datos
+        datos_actualizados = response.data[0] if response.data else None
+        
+        return {"mensaje": "Perfil actualizado con éxito", "data": datos_actualizados}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error al actualizar el perfil: {str(e)}")
