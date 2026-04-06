@@ -145,7 +145,7 @@ export default function LoginForm() {
         <p className="text-sm text-slate-500">
           ¿No tienes cuenta?
           <Link
-            href="/registro"
+            href="/register"
             className="font-bold text-[#C4B27A] hover:text-[#A38C52] hover:underline transition-colors ml-1"
           >
             Regístrate

@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from datetime import date, time
+from typing import Optional
 
 # Cargar variables de entorno
 load_dotenv()
@@ -41,6 +43,18 @@ class PerfilUpdate(BaseModel):
     ubicacion: str
     avatar_url: str | None = None  # Nuevo campo (opcional)
     banner_url: str | None = None  # Nuevo campo (opcional)
+
+class EventoCreate(BaseModel):
+    nombre: str
+    descripcion: str
+    lugar: str
+    fecha: date
+    hora: time
+    precio: float = 0.0
+    cartel_url: Optional[str] = None
+    categoria: str
+    aforo_max: Optional[int] = None
+    estado: str = 'Publicado'  # Cambia 'Publicado' por la palabra exacta de tu ENUM que arreglaste antes
 
 # --- Valida el Token de Next.js ---
 def get_current_user(authorization: str = Header(None)):
@@ -90,3 +104,42 @@ def actualizar_perfil(perfil: PerfilUpdate, current_user = Depends(get_current_u
         return {"mensaje": "Perfil actualizado con éxito", "data": datos_actualizados}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error al actualizar el perfil: {str(e)}")
+    
+# --- ENDPOINTS DE EVENTOS ---
+
+@app.get("/api/eventos")
+def obtener_eventos():
+    """Obtiene todos los eventos públicos para la cartelera"""
+    try:
+        # Hacemos un select de todas las columnas que necesita la EventCard
+        # Le añadimos un modificador para que los ordene por fecha de más próximo a más lejano
+        response = supabase.table("eventos").select(
+            "id_evento, nombre, descripcion, lugar, fecha, hora, precio, cartel_url, categoria, aforo_max, estado, id_empresario"
+        ).order("fecha").execute()
+        
+        return {"mensaje": "Eventos recuperados con éxito", "data": response.data}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al obtener los eventos: {str(e)}")
+    
+    
+@app.post("/api/eventos")
+def crear_evento(evento: EventoCreate, current_user = Depends(get_current_user)):
+    """Crea un nuevo evento en la base de datos asociado al usuario autenticado"""
+    try:
+        # Convertimos el modelo de Pydantic a un diccionario
+        evento_data = evento.model_dump() # Si usas Pydantic v1, usa evento.dict()
+        
+        # FastAPI recibe objetos date/time, pero Supabase necesita strings en formato ISO
+        evento_data['fecha'] = evento_data['fecha'].isoformat()
+        evento_data['hora'] = evento_data['hora'].isoformat()
+        
+        # Asignamos la autoría del evento al usuario que hace la petición
+        evento_data['id_empresario'] = current_user.id
+        
+        # Insertamos en la tabla eventos de Supabase
+        response = supabase.table("eventos").insert(evento_data).execute()
+        
+        return {"mensaje": "Evento creado con éxito", "data": response.data}
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al crear el evento: {str(e)}")
