@@ -108,15 +108,12 @@ export default function HomePage() {
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-form-bg relative">
         <header className="h-20 px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-nimbus-cloud/30">
           <div className="flex items-center gap-4 flex-1">
-            <button className="p-2 text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/50 rounded-lg transition-colors">
-              <MdMenu className="text-2xl" />
-            </button>
             <div className="relative max-w-md w-full">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-nimbus-cloud pointer-events-none">
                 <MdSearch className="text-xl" />
               </span>
               <input 
-                className="w-full pl-10 pr-4 py-2.5 bg-white/60 border border-nimbus-cloud/40 rounded-xl text-sm focus:ring-2 focus:ring-lemon-icing focus:bg-white transition-all placeholder:text-slate-400" 
+                className="w-full pl-10 pr-4 py-2.5 bg-white/60 border border-nimbus-cloud rounded-xl text-sm focus:ring-2 focus:ring-lemon-icing focus:bg-white transition-all placeholder:text-slate-400" 
                 placeholder="Buscar eventos, lugares..." 
                 type="text"
                 value={searchTerm}
@@ -184,15 +181,7 @@ export default function HomePage() {
                 <h1 className="text-3xl font-bold text-midnight-blue tracking-tight mb-1">Cartelera de Eventos</h1>
                 <p className="text-slate-600 font-medium">Descubre qué está pasando en Lebrija.</p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Vista:</span>
-                <button className="p-1.5 bg-white shadow-sm border border-nimbus-cloud/40 rounded text-midnight-blue">
-                  <MdGridView className="text-xl" />
-                </button>
-                <button className="p-1.5 text-slate-400 hover:text-midnight-blue hover:bg-white/50 rounded transition-colors">
-                  <MdViewList className="text-xl" />
-                </button>
-              </div>
+              
             </div>
 
             {isLoading ? (
@@ -245,8 +234,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="mt-auto bg-nimbus-cloud/20 rounded-2xl p-6 relative overflow-hidden text-midnight-blue border border-nimbus-cloud/30">
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-lemon-icing/40 rounded-full blur-2xl"></div>
+        <div className="mt-auto bg-nimbus-cloud rounded-2xl p-6 relative overflow-hidden text-midnight-blue border border-nimbus-cloud/50">
+          <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/50 rounded-full blur-2xl"></div>
           <div className="relative z-10 flex flex-col gap-4">
             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-midnight-blue mb-1 shadow-sm">
               <MdStorefront className="text-xl" />
@@ -255,7 +244,7 @@ export default function HomePage() {
               <h4 className="font-bold text-lg leading-tight mb-1 text-midnight-blue">¿Eres empresario?</h4>
               <p className="text-slate-600 text-sm leading-snug">Publica tus eventos y llega a toda Lebrija en minutos.</p>
             </div>
-            <button className="w-full py-2.5 bg-midnight-blue hover:bg-black text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 group shadow-lg">
+            <button className="w-full py-2.5 bg-midnight-blue  text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 group shadow-lg">
               <span>Empezar ahora</span>
               <MdArrowForward className="text-base group-hover:translate-x-1 transition-transform" />
             </button>
