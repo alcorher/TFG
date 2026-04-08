@@ -106,7 +106,7 @@ export default function HomePage() {
       <Sidebar />
 
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-form-bg relative">
-        <header className="h-20 px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-nimbus-cloud/30">
+        <header className="h-20 px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-nimbus-cloud/30">
           <div className="flex items-center gap-4 flex-1">
             <button className="p-2 text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/50 rounded-lg transition-colors">
               <MdMenu className="text-2xl" />

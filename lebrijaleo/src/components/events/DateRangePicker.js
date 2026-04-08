@@ -28,6 +28,16 @@ export function DateRangePicker({ className, onRangeChange }) {
         numberOfMonths={1}
         locale={es}
         className="rounded-md border-none"
+        classNames={{
+          // Forces the Lemon Icing background and Midnight Blue text for selected days
+          day_selected:
+            "bg-lemon-icing text-midnight-blue hover:bg-lemon-icing hover:text-midnight-blue focus:bg-lemon-icing focus:text-midnight-blue",
+          // Highlights the current day clearly
+          day_today: "bg-nimbus-cloud/20 text-midnight-blue font-bold",
+          // Fixes the middle days in a range selection to have a softer highlight
+          day_range_middle:
+            "aria-selected:bg-lemon-icing/40 aria-selected:text-midnight-blue",
+        }}
       />
     </div>
   )
