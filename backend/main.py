@@ -1,12 +1,12 @@
 import os
-from fastapi import FastAPI, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from datetime import date, time
 from typing import Optional
-
+import uuid 
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Header, FastAPI
 # Cargar variables de entorno
 load_dotenv()
 
@@ -121,25 +121,66 @@ def obtener_eventos():
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error al obtener los eventos: {str(e)}")
     
-    
 @app.post("/api/eventos")
-def crear_evento(evento: EventoCreate, current_user = Depends(get_current_user)):
-    """Crea un nuevo evento en la base de datos asociado al usuario autenticado"""
+async def crear_evento(
+    title: str = Form(...),
+    description: str = Form(...),
+    category: str = Form(...),
+    date: str = Form(...),
+    location: str = Form(...),
+    price: str = Form("0"),
+    capacity: str = Form(""),
+    ticketLink: str = Form(""),
+    isFree: str = Form("false"),
+    banner: UploadFile = File(...),
+    authorization: str = Header(None) # <-- 1. CAPTURAMOS EL TOKEN
+):
+    # 2. VALIDAMOS QUE HAYA TOKEN
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado. Inicia sesión primero.")
+    
+    token = authorization.split(" ")[1]
+
     try:
-        # Convertimos el modelo de Pydantic a un diccionario
-        evento_data = evento.model_dump() # Si usas Pydantic v1, usa evento.dict()
+        # 3. LE PREGUNTAMOS A SUPABASE QUIÉN ES EL DUEÑO DE ESTE TOKEN
+        user_response = supabase.auth.get_user(token)
+        usuario_id = user_response.user.id
+
+        # ... (Tu código de subida de imagen a Storage se queda igual) ...
+        extension = banner.filename.split(".")[-1]
+        nombre_archivo = f"carteles/{uuid.uuid4()}.{extension}"
         
-        # FastAPI recibe objetos date/time, pero Supabase necesita strings en formato ISO
-        evento_data['fecha'] = evento_data['fecha'].isoformat()
-        evento_data['hora'] = evento_data['hora'].isoformat()
+        contenido_archivo = await banner.read()
         
-        # Asignamos la autoría del evento al usuario que hace la petición
-        evento_data['id_empresario'] = current_user.id
+        supabase.storage.from_("eventos").upload(
+            path=nombre_archivo,
+            file=contenido_archivo,
+            file_options={"content-type": banner.content_type}
+        )
         
-        # Insertamos en la tabla eventos de Supabase
-        response = supabase.table("eventos").insert(evento_data).execute()
+        cartel_url = supabase.storage.from_("eventos").get_public_url(nombre_archivo)
+
+        # 4. AÑADIMOS EL ID DEL EMPRESARIO AL EVENTO
+        fecha_part, hora_part = date.split("T")
         
+        evento_db = {
+            "nombre": title,
+            "descripcion": description,
+            "categoria": category,
+            "fecha": fecha_part,
+            "hora": f"{hora_part}:00",
+            "lugar": location,
+            "precio": 0.0 if isFree == "true" else float(price),
+            "aforo_max": int(capacity) if capacity else None,
+            "cartel_url": cartel_url,
+            "estado": "Activo",
+            "id_empresario": usuario_id # <-- ¡AQUÍ ESTÁ LA MAGIA!
+        }
+
+        response = supabase.table("eventos").insert(evento_db).execute()
+
         return {"mensaje": "Evento creado con éxito", "data": response.data}
-        
+
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error al crear el evento: {str(e)}")
+        print(f"Error al crear evento: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
