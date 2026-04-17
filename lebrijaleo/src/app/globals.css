@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+
 
 @theme {
   /* Paleta Oficial LebriJaleo */
@@ -109,35 +109,6 @@
   --sidebar-accent: #F0EEE9;
   --sidebar-accent-foreground: #221610;
   --sidebar-border: #DBCDA3;
-  --sidebar-ring: #C1A866;
-}
-
-.dark {
-  --background: #221610; /* midnight-blue */
-  --foreground: #f8f6f5; /* cloud-dancer */
-  --card: #221610;
-  --card-foreground: #f8f6f5;
-  --popover: #221610;
-  --popover-foreground: #f8f6f5;
-  --primary: #F6EBC8;
-  --primary-foreground: #221610;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #f8f6f5;
-  --muted: #1a1a1a;
-  --muted-foreground: #a1a1aa;
-  --accent: #1a1a1a;
-  --accent-foreground: #f8f6f5;
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: #3f3f46;
-  --input: #3f3f46;
-  --ring: #C1A866;
-  --sidebar: #221610;
-  --sidebar-foreground: #f8f6f5;
-  --sidebar-primary: #F6EBC8;
-  --sidebar-primary-foreground: #221610;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #f8f6f5;
-  --sidebar-border: #3f3f46;
   --sidebar-ring: #C1A866;
 }
 
