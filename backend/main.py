@@ -201,3 +201,63 @@ async def obtener_evento(evento_id: str):
     except Exception as e:
         print(f"Error al obtener el evento {evento_id}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/eventos/{evento_id}/favoritos")
+async def obtener_favoritos(evento_id: str, authorization: str = Header(None)):
+    try:
+        # Get count
+        response_count = supabase.table("favoritos").select("*", count="exact").eq("id_evento", evento_id).execute()
+        count = response_count.count if response_count.count is not None else 0
+
+        is_favorite = False
+        if authorization and authorization.startswith("Bearer "):
+            token = authorization.split(" ")[1]
+            try:
+                user_response = supabase.auth.get_user(token)
+                user_id = user_response.user.id
+                
+                fav_response = supabase.table("favoritos").select("*").eq("id_evento", evento_id).eq("id_usuario", user_id).execute()
+                is_favorite = len(fav_response.data) > 0
+            except Exception:
+                pass # Invalid token or no favorite, ignore
+
+        return {"count": count, "is_favorite": is_favorite}
+    except Exception as e:
+        print(f"Error al obtener favoritos: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/eventos/{evento_id}/favoritos")
+async def toggle_favorito(evento_id: str, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado. Inicia sesión primero.")
+    
+    token = authorization.split(" ")[1]
+    try:
+        user_response = supabase.auth.get_user(token)
+        user_id = user_response.user.id
+        
+        # Check if already favorite
+        fav_response = supabase.table("favoritos").select("*").eq("id_evento", evento_id).eq("id_usuario", user_id).execute()
+        is_favorite = len(fav_response.data) > 0
+        
+        if is_favorite:
+            # Remove favorite
+            supabase.table("favoritos").delete().eq("id_evento", evento_id).eq("id_usuario", user_id).execute()
+            nuevo_estado = False
+        else:
+            # Add favorite
+            supabase.table("favoritos").insert({
+                "id_usuario": user_id,
+                "id_evento": evento_id
+            }).execute()
+            nuevo_estado = True
+            
+        # Get new count
+        response_count = supabase.table("favoritos").select("*", count="exact").eq("id_evento", evento_id).execute()
+        count = response_count.count if response_count.count is not None else 0
+        
+        return {"count": count, "is_favorite": nuevo_estado}
+
+    except Exception as e:
+        print(f"Error al alternar favorito: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
