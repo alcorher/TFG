@@ -164,6 +164,43 @@ def obtener_mis_eventos(current_user = Depends(get_current_user)):
         return {"mensaje": "Eventos recuperados con éxito", "data": eventos_procesados}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error al obtener tus eventos: {str(e)}")
+
+@app.get("/api/mis-favoritos")
+def obtener_mis_favoritos(current_user = Depends(get_current_user)):
+    """Obtiene los eventos que el usuario autenticado ha marcado como favoritos"""
+    try:
+        # 1. Obtener los IDs de los eventos favoritos del usuario
+        fav_response = supabase.table("favoritos").select("id_evento").eq("id_usuario", current_user.id).execute()
+        
+        if not fav_response.data:
+            return {"mensaje": "No hay favoritos", "data": []}
+            
+        event_ids = [f["id_evento"] for f in fav_response.data]
+        
+        # 2. Obtener los detalles de esos eventos
+        response = supabase.table("eventos").select(
+            "id_evento, nombre, descripcion, lugar, fecha, hora, precio, cartel_url, categoria, aforo_max, estado, id_empresario, favoritos(count)"
+        ).in_("id_evento", event_ids).order("fecha").execute()
+        
+        eventos_procesados = []
+        for e in response.data:
+            evento_mod = e.copy()
+            count = 0
+            if "favoritos" in e and e["favoritos"]:
+                fav_data = e["favoritos"]
+                if isinstance(fav_data, list) and len(fav_data) > 0:
+                    count = fav_data[0].get("count", 0)
+                elif isinstance(fav_data, dict):
+                    count = fav_data.get("count", 0)
+                else:
+                    count = len(fav_data) if isinstance(fav_data, list) else 0
+            
+            evento_mod["likes"] = count
+            eventos_procesados.append(evento_mod)
+        
+        return {"mensaje": "Eventos recuperados con éxito", "data": eventos_procesados}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al obtener tus eventos favoritos: {str(e)}")
     
 @app.post("/api/eventos")
 async def crear_evento(

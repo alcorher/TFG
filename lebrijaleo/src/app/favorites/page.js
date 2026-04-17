@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Sidebar from '@/components/layout/Navbar';
 import EventCard from '@/components/events/EventCard';
 import { createClient } from '@/utils/supabase/client';
@@ -12,13 +11,13 @@ import {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export default function MisEventosPage() {
+export default function MisFavoritosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [eventos, setEventos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchMisEventos() {
+    async function fetchMisFavoritos() {
       try {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
@@ -28,7 +27,7 @@ export default function MisEventosPage() {
           return;
         }
 
-        const response = await fetch(`${API_URL}/api/mis-eventos`, {
+        const response = await fetch(`${API_URL}/api/mis-favoritos`, {
           headers: {
             'Authorization': `Bearer ${session.access_token}`
           }
@@ -38,7 +37,7 @@ export default function MisEventosPage() {
           const result = await response.json();
           setEventos(result.data);
         } else {
-          console.error("Error al obtener mis eventos");
+          console.error("Error al obtener mis favoritos");
         }
       } catch (error) {
         console.error("Error de conexión con la API:", error);
@@ -46,7 +45,7 @@ export default function MisEventosPage() {
         setIsLoading(false);
       }
     }
-    fetchMisEventos();
+    fetchMisFavoritos();
   }, []);
 
   const eventosFiltrados = eventos.filter(evento =>
@@ -72,16 +71,13 @@ export default function MisEventosPage() {
               </span>
               <input
                 className="w-full pl-10 pr-4 py-2.5 bg-white/50 border border-nimbus-cloud/50 rounded-xl text-sm focus:ring-2 focus:ring-lemon-icing/80 focus:bg-white transition-all placeholder:text-midnight-blue/40"
-                placeholder="Buscar en mis eventos..."
+                placeholder="Buscar en mis favoritos..."
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
-        
-           
-            
         </header>
 
         {/* CONTENIDO PRINCIPAL */}
@@ -91,8 +87,8 @@ export default function MisEventosPage() {
             {/* Título y Filtros */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
               <div>
-                <h1 className="text-3xl font-bold text-midnight-blue tracking-tight mb-2">Mis Eventos</h1>
-                <p className="text-midnight-blue/70 font-medium">Gestiona los {eventos.length} eventos que has publicado en LebriJaleo.</p>
+                <h1 className="text-3xl font-bold text-midnight-blue tracking-tight mb-2">Mis Favoritos</h1>
+                <p className="text-midnight-blue/70 font-medium">Tienes {eventos.length} eventos guardados en LebriJaleo.</p>
               </div>
              
             </div>
@@ -104,7 +100,7 @@ export default function MisEventosPage() {
               </div>
             ) : eventosFiltrados.length === 0 ? (
               <div className="text-center py-20 bg-white/40 rounded-3xl border-2 border-dashed border-nimbus-cloud/30">
-                <p className="text-slate-500 font-medium">No se encontraron eventos.</p>
+                <p className="text-slate-500 font-medium">No se encontraron eventos favoritos.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20 xl:grid-cols-3 2xl:grid-cols-4">
