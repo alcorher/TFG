@@ -136,6 +136,34 @@ def obtener_eventos():
         return {"mensaje": "Eventos recuperados con éxito", "data": eventos_procesados}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error al obtener los eventos: {str(e)}")
+
+@app.get("/api/mis-eventos")
+def obtener_mis_eventos(current_user = Depends(get_current_user)):
+    """Obtiene los eventos publicados por el usuario autenticado"""
+    try:
+        response = supabase.table("eventos").select(
+            "id_evento, nombre, descripcion, lugar, fecha, hora, precio, cartel_url, categoria, aforo_max, estado, id_empresario, favoritos(count)"
+        ).eq("id_empresario", current_user.id).order("fecha", desc=True).execute()
+        
+        eventos_procesados = []
+        for e in response.data:
+            evento_mod = e.copy()
+            count = 0
+            if "favoritos" in e and e["favoritos"]:
+                fav_data = e["favoritos"]
+                if isinstance(fav_data, list) and len(fav_data) > 0:
+                    count = fav_data[0].get("count", 0)
+                elif isinstance(fav_data, dict):
+                    count = fav_data.get("count", 0)
+                else:
+                    count = len(fav_data) if isinstance(fav_data, list) else 0
+            
+            evento_mod["likes"] = count
+            eventos_procesados.append(evento_mod)
+        
+        return {"mensaje": "Eventos recuperados con éxito", "data": eventos_procesados}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al obtener tus eventos: {str(e)}")
     
 @app.post("/api/eventos")
 async def crear_evento(
