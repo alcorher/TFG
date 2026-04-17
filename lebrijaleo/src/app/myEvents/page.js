@@ -79,15 +79,9 @@ export default function MisEventosPage() {
               />
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center text-xs font-medium text-midnight-blue/70 bg-white px-3 py-1.5 rounded-full border border-nimbus-cloud/40 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-              Modo Organizador
-            </div>
-            <button className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors lg:hidden">
-              <MdSpaceDashboard className="text-2xl" />
-            </button>
-          </div>
+        
+           
+            
         </header>
 
         {/* CONTENIDO PRINCIPAL */}
