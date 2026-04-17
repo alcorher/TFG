@@ -184,3 +184,20 @@ async def crear_evento(
     except Exception as e:
         print(f"Error al crear evento: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+    
+@app.get("/api/eventos/{evento_id}")
+async def obtener_evento(evento_id: str):
+    try:
+        # Buscamos en la tabla de Supabase el evento que coincida con el ID
+        response = supabase.table("eventos").select("*").eq("id_evento", evento_id).execute()
+        
+        # Si la lista viene vacía, el evento no existe
+        if not response.data or len(response.data) == 0:
+            raise HTTPException(status_code=404, detail="Evento no encontrado en LebriJaleo")
+            
+        # Devolvemos el primer (y único) evento encontrado
+        return response.data[0]
+
+    except Exception as e:
+        print(f"Error al obtener el evento {evento_id}: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
