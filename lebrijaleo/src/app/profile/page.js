@@ -6,7 +6,7 @@ import Sidebar from '@/components/layout/Navbar';
 import EventCard from '@/components/events/EventCard';
 import { createClient } from '@/utils/supabase/client';
 import { 
-  MdArrowBack, MdMenu, MdGroup, 
+  MdArrowBack, MdMenu, MdClose, MdGroup, 
   MdBookmark, MdGridView, MdViewList, MdEdit, 
   MdLogout
 } from "react-icons/md";
@@ -21,7 +21,7 @@ export default function ProfilePage() {
   const [userProfile, setUserProfile] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' o 'list'
+  const [showMobilePanel, setShowMobilePanel] = useState(false);
 
   useEffect(() => {
     async function loadProfileAndFavorites() {
@@ -119,7 +119,10 @@ export default function ProfilePage() {
             <h2 className="text-lg font-bold text-midnight-blue">Perfil de Usuario</h2>
           </div>
           <div className="flex items-center gap-3">
-            <button className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors lg:hidden">
+            <button 
+              onClick={() => setShowMobilePanel(true)}
+              className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors xl:hidden"
+            >
               <MdMenu className="text-xl" />
             </button>
           </div>
@@ -187,21 +190,6 @@ export default function ProfilePage() {
             <div className="mb-12">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-midnight-blue">Mis Favoritos</h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-midnight-blue/40 uppercase tracking-wider hidden sm:block">Vista:</span>
-                  <button 
-                    onClick={() => setViewMode('grid')}
-                    className={`p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm border border-nimbus-cloud/50 text-midnight-blue' : 'text-midnight-blue/40 hover:text-midnight-blue/70 hover:bg-white/50'}`}
-                  >
-                    <MdGridView className="text-xl" />
-                  </button>
-                  <button 
-                    onClick={() => setViewMode('list')}
-                    className={`p-1.5 rounded transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm border border-nimbus-cloud/50 text-midnight-blue' : 'text-midnight-blue/40 hover:text-midnight-blue/70 hover:bg-white/50'}`}
-                  >
-                    <MdViewList className="text-xl" />
-                  </button>
-                </div>
               </div>
 
               {favorites.length === 0 ? (
@@ -211,24 +199,22 @@ export default function ProfilePage() {
                   <p className="text-slate-400 text-sm mt-1">Explora la cartelera y guarda los que más te gusten.</p>
                 </div>
               ) : (
-                <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
-                  {favorites.map(evento => (
-                    <EventCard key={evento.id_evento || evento.id} evento={evento} />
-                  ))}
-                </div>
-              )}
+                    <div className={`grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3`}>
+                    {favorites.map(evento => (
+                        <EventCard key={evento.id_evento || evento.id} evento={evento} />
+                    ))}
+                    </div>
+                )}
             </div>
           </div>
         </div>
       </main>
 
-      {/* ASIDE DERECHO (Acciones) */}
+      {/* ASIDE DERECHO (Acciones) — Desktop */}
       <aside className="w-80 bg-white border-l border-nimbus-cloud/40 p-6 flex flex-col gap-8 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto hidden xl:flex shrink-0">
-        
         {/* Acciones */}
         <div className="bg-white rounded-2xl flex flex-col gap-3">
           <h3 className="text-midnight-blue font-bold text-lg">Acciones</h3>
-          
           <button 
             onClick={() => router.push('/profile/edit')}
             className="w-full py-3 bg-lemon-icing hover:brightness-95 text-midnight-blue font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
@@ -236,7 +222,6 @@ export default function ProfilePage() {
             <MdEdit className="text-xl" />
             <span>Editar Perfil</span>
           </button>
-          
           <button 
             onClick={handleLogout}
             className="w-full py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-sm transition-all flex items-center justify-start gap-3 border border-red-100"
@@ -245,12 +230,52 @@ export default function ProfilePage() {
             <span>Cerrar Sesión</span>
           </button>
         </div>
-
-        {/* Footer info */}
-        <div className="mt-auto text-center pb-4">
-          <p className="text-xs text-midnight-blue/40 font-medium">© 2026 LebriJaleo App.</p>
-        </div>
       </aside>
+
+      {/* PANEL MÓVIL — Overlay + Drawer */}
+      <div 
+        className={`fixed inset-0 z-50 xl:hidden transition-opacity duration-300 ${
+          showMobilePanel ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
+          onClick={() => setShowMobilePanel(false)} 
+        />
+        {/* Drawer */}
+        <aside 
+          className={`absolute top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl p-6 flex flex-col gap-8 overflow-y-auto transition-transform duration-300 ease-out ${
+            showMobilePanel ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="text-midnight-blue font-bold text-lg">Acciones</h3>
+            <button 
+              onClick={() => setShowMobilePanel(false)}
+              className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors"
+            >
+              <MdClose className="text-xl" />
+            </button>
+          </div>
+          <div className="flex flex-col gap-3">
+            <button 
+              onClick={() => { setShowMobilePanel(false); router.push('/profile/edit'); }}
+              className="w-full py-3 bg-lemon-icing hover:brightness-95 text-midnight-blue font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
+            >
+              <MdEdit className="text-xl" />
+              <span>Editar Perfil</span>
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="w-full py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-sm transition-all flex items-center justify-start gap-3 border border-red-100"
+            >
+              <MdLogout className="text-xl" />
+              <span>Cerrar Sesión</span>
+            </button>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

@@ -10,7 +10,7 @@ import {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export default function EditProfileForm() {
+export default function EditProfileForm({ onOpenMobilePanel }) {
   const router = useRouter();
   const supabase = createClient();
   
@@ -202,6 +202,16 @@ export default function EditProfileForm() {
           </button>
           <h2 className="text-lg font-bold text-midnight-blue">Editar Perfil</h2>
         </div>
+        {onOpenMobilePanel && (
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={onOpenMobilePanel}
+              className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors xl:hidden"
+            >
+              <MdMenu className="text-xl" />
+            </button>
+          </div>
+        )}
       </header>
 
       <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

@@ -1,9 +1,45 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/utils/supabase/client';
 import { 
   MdDashboard, MdWeekend, MdFavorite, MdGroups, MdAddCircle, MdCalendarMonth, MdSettings 
 } from "react-icons/md";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export default function Navbar() {
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [userName, setUserName] = useState('');
+
+  useEffect(() => {
+    async function loadAvatar() {
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) return;
+
+        const response = await fetch(`${API_URL}/api/perfil`, {
+          headers: { 'Authorization': `Bearer ${session.access_token}` }
+        });
+
+        if (response.ok) {
+          const profile = await response.json();
+          setAvatarUrl(profile.avatar_url || null);
+          setUserName(profile.nombre || '');
+        }
+      } catch (error) {
+        console.error("Error cargando avatar del navbar:", error);
+      }
+    }
+
+    loadAvatar();
+  }, []);
+
+  const defaultAvatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(userName || 'U') + "&background=F6EBC8&color=1e293b&size=96";
+
   return (
     <aside className="w-20 bg-white border-r border-slate-100 flex flex-col items-center py-6 h-full shadow-sm z-20 shrink-0">
       
@@ -40,7 +76,7 @@ export default function Navbar() {
         </Link>
         
         {/* Ajustes (Marcado como activo en esta vista) */}
-        <Link href="/perfil/editar" className="group relative w-full aspect-square rounded-xl flex items-center justify-center text-midnight-blue bg-lemon-icing transition-all mt-auto">
+        <Link href="/profile/edit" className="group relative w-full aspect-square rounded-xl flex items-center justify-center text-midnight-blue bg-lemon-icing transition-all mt-auto">
           <MdSettings className="text-3xl" />
           <span className="absolute left-16 bg-midnight-blue text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Ajustes</span>
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-midnight-blue rounded-r-full opacity-20"></div>
@@ -49,8 +85,12 @@ export default function Navbar() {
       
       {/* Avatar del usuario (Lleva al perfil) */}
       <div className="mt-4 px-2 pb-2">
-        <Link href="/perfil/editar" className="block w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md hover:ring-2 hover:ring-lemon-icing transition-all">
-          <img alt="User avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9Zwa1Xusu_sbb_EB3ynLJ4sPsQ8Ld4aTx-EwR1dpuBS_tc5_R6dVgi1O-BobPWMskkLjCfxdCC7sxB8se1uBlCtf3wAxj7h8-eXcJm3ybul0MTT9cEDk7-B5Ac1FFQ8vGUTkQxwbARzW5Y6rZr-i6dN9Cd3bkOJJ5Xm8qEYyYyGo75EOE3vbsmT0QrmMCAqp5WTw_gf988maRQrUpAQWnVcw_4Wu9wGVnWuFg2tLEi3v280_EyG2yQzKY5mShofR5GgS-CgjhnFrN" />
+        <Link href="/profile" className="block w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md hover:ring-2 hover:ring-lemon-icing transition-all">
+          <img 
+            alt="User avatar" 
+            className="w-full h-full object-cover"
+            src={avatarUrl || defaultAvatar} 
+          />
         </Link>
       </div>
     </aside>
