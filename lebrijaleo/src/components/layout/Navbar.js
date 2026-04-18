@@ -54,11 +54,8 @@ export default function Navbar() {
           <MdDashboard className="text-3xl" />
           <span className="absolute left-16 bg-midnight-blue text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Cartelera</span>
         </button>
-        <button className="group relative w-full aspect-square rounded-xl flex items-center justify-center text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/30 transition-all">
-          <MdWeekend className="text-3xl" />
-          <span className="absolute left-16 bg-midnight-blue text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Este finde</span>
-        </button>
-        <Link href="/favoritos" className="group relative w-full aspect-square rounded-xl flex items-center justify-center text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/30 transition-all">
+        
+        <Link href="/favorites" className="group relative w-full aspect-square rounded-xl flex items-center justify-center text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/30 transition-all">
           <MdFavorite className="text-3xl" />
           <span className="absolute left-16 bg-midnight-blue text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Favoritos</span>
         </Link>
