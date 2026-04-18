@@ -1,4 +1,8 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
 import EditProfileForm from "@/components/profile/EditProfileForm";
+import { createClient } from '@/utils/supabase/client';
 import {
   MdLockReset,
   MdSecurity,
@@ -8,12 +12,15 @@ import {
 } from "react-icons/md";
 import Navbar from "@/components/layout/Navbar";
 
-export const metadata = {
-  title: "Lebrijaleo - Editar Perfil",
-  description: "Actualiza tu perfil de LebriJaleo",
-};
-
 export default function EditProfilePage() {
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
   return (
     <div className="bg-cloud-dancer text-midnight-blue font-display antialiased overflow-hidden h-screen flex">
       {/* SIDEBAR IZQUIERDO (Componente Reutilizable) */}
@@ -44,7 +51,10 @@ export default function EditProfilePage() {
 
           <div className="h-px bg-slate-100 my-2"></div>
 
-          <button className="w-full py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-sm transition-all flex items-center justify-start gap-3 border border-red-100">
+          <button 
+            onClick={handleLogout}
+            className="w-full py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-sm transition-all flex items-center justify-start gap-3 border border-red-100"
+          >
             <MdLogout className="text-xl" />
             <span>Cerrar Sesión</span>
           </button>
