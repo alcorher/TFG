@@ -276,11 +276,114 @@ async def obtener_evento(evento_id: str):
         if not response.data or len(response.data) == 0:
             raise HTTPException(status_code=404, detail="Evento no encontrado en LebriJaleo")
             
+        evento = response.data[0]
+        
+        # Obtenemos también el campo creado_por del empresario propietario
+        try:
+            user_response = supabase.table("usuarios").select("creado_por").eq("id_usuario", evento["id_empresario"]).execute()
+            if user_response.data and len(user_response.data) > 0:
+                evento["empresario_creado_por"] = user_response.data[0].get("creado_por")
+            else:
+                evento["empresario_creado_por"] = None
+        except Exception:
+            evento["empresario_creado_por"] = None
+            
         # Devolvemos el primer (y único) evento encontrado
-        return response.data[0]
+        return evento
 
     except Exception as e:
         print(f"Error al obtener el evento {evento_id}: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/api/eventos/{evento_id}")
+async def actualizar_evento(
+    evento_id: str,
+    title: str = Form(...),
+    description: str = Form(...),
+    category: str = Form(...),
+    date: str = Form(...),
+    location: str = Form(...),
+    price: str = Form("0"),
+    capacity: str = Form(""),
+    ticketLink: str = Form(""),
+    isFree: str = Form("false"),
+    banner: UploadFile = File(None),
+    authorization: str = Header(None)
+):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado. Inicia sesión primero.")
+    
+    token = authorization.split(" ")[1]
+
+    try:
+        user_response = supabase.auth.get_user(token)
+        usuario_id = user_response.user.id
+
+        # 1. Obtener el evento para verificar permisos
+        ev_response = supabase.table("eventos").select("id_empresario").eq("id_evento", evento_id).execute()
+        if not ev_response.data or len(ev_response.data) == 0:
+            raise HTTPException(status_code=404, detail="Evento no encontrado")
+            
+        id_empresario = ev_response.data[0]["id_empresario"]
+        
+        # 2. Obtener el admin que creó la cuenta del empresario
+        creado_por = None
+        try:
+            usr_response = supabase.table("usuarios").select("creado_por").eq("id_usuario", id_empresario).execute()
+            if usr_response.data and len(usr_response.data) > 0:
+                creado_por = usr_response.data[0].get("creado_por")
+        except Exception:
+            pass
+            
+        # 3. Comprobar permisos (es el dueño o es el admin que lo creó)
+        if usuario_id != id_empresario and usuario_id != creado_por:
+            raise HTTPException(status_code=403, detail="No tienes permisos para editar este evento")
+
+        # 4. Preparar la actualización
+        # Format the datetime correctly. Sometimes HTML date inputs give YYYY-MM-DDTHH:MM
+        if "T" in date:
+            fecha_part, hora_part = date.split("T")
+            if len(hora_part) == 5: # HH:MM
+                hora_part = f"{hora_part}:00"
+        else:
+            # Fallback if somehow they pass different format
+            fecha_part = date
+            hora_part = "00:00:00"
+
+        evento_db = {
+            "nombre": title,
+            "descripcion": description,
+            "categoria": category,
+            "fecha": fecha_part,
+            "hora": hora_part,
+            "lugar": location,
+            "precio": 0.0 if isFree == "true" else float(price),
+            "aforo_max": int(capacity) if capacity else None,
+        }
+
+        # 5. Si viene nueva imagen, la subimos
+        if banner and banner.filename:
+            extension = banner.filename.split(".")[-1]
+            nombre_archivo = f"carteles/{uuid.uuid4()}.{extension}"
+            
+            contenido_archivo = await banner.read()
+            
+            supabase.storage.from_("eventos").upload(
+                path=nombre_archivo,
+                file=contenido_archivo,
+                file_options={"content-type": banner.content_type}
+            )
+            
+            cartel_url = supabase.storage.from_("eventos").get_public_url(nombre_archivo)
+            evento_db["cartel_url"] = cartel_url
+
+        # 6. Guardar cambios
+        response = supabase.table("eventos").update(evento_db).eq("id_evento", evento_id).execute()
+
+        return {"mensaje": "Evento actualizado con éxito", "data": response.data}
+
+    except Exception as e:
+        print(f"Error al actualizar evento {evento_id}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/api/eventos/{evento_id}/favoritos")
