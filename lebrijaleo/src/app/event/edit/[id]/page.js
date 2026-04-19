@@ -22,7 +22,7 @@ export default function EditEventPage({ params }) {
   const [isSaving, setIsSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
-  
+
   // Nuevos estados para las reglas de negocio
   const [error, setError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
@@ -70,7 +70,7 @@ export default function EditEventPage({ params }) {
         let formattedDate = "";
         if (data.fecha && data.hora) {
           formattedDate = `${data.fecha}T${data.hora.substring(0, 5)}`;
-          
+
           // REGLA DE NEGOCIO (RN-005): Comprobar si el evento ya pasó
           const eventDateTime = new Date(formattedDate);
           if (eventDateTime < new Date()) {
@@ -107,7 +107,7 @@ export default function EditEventPage({ params }) {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     // Limpiar error específico al escribir
     if (formErrors[name]) {
       setFormErrors(prev => ({ ...prev, [name]: null }));
@@ -154,7 +154,7 @@ export default function EditEventPage({ params }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (isPastEvent) return; // Doble validación de seguridad
     if (!validateForm()) return; // Detener si hay errores de validación
 
@@ -227,30 +227,20 @@ export default function EditEventPage({ params }) {
       <Sidebar />
 
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-form-bg relative">
-        <header className="h-20 px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-nimbus-cloud/40">
-          <div className="flex items-center gap-4">
-            <button onClick={() => router.push(`/event/${id}`)} className="flex items-center gap-2 text-midnight-blue/60 hover:text-midnight-blue transition-colors">
+        <header className="h-20 px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-nimbus-cloud/50">
+          <div className="flex items-center gap-4 flex-1">
+            <button onClick={() => router.push(`/event/${id}`)} className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors flex items-center gap-2">
               <MdArrowBack className="text-xl" />
-              <span className="font-bold text-sm">Volver al Evento</span>
+              <span className="font-bold text-sm hidden sm:inline">Volver al Evento</span>
             </button>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-bold text-midnight-blue/40 uppercase tracking-wider">EDITAR EVENTO</span>
+            <h1 className="text-xl font-bold text-midnight-blue">
+              Editar Evento
+            </h1>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 no-scrollbar">
+        <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
           <div className="max-w-4xl mx-auto">
-
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-midnight-blue tracking-tight mb-2">
-                Editar Evento: {formData.title || "Sin título"}
-              </h1>
-              <p className="text-midnight-blue/60 font-medium">
-                Actualiza la información de tu evento. Los cambios se reflejarán inmediatamente.
-              </p>
-            </div>
-
             {/* AVISO DE EVENTO PASADO (RN-005) */}
             {isPastEvent && (
               <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl flex items-start gap-3">
@@ -262,84 +252,219 @@ export default function EditEventPage({ params }) {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className={`bg-white rounded-3xl shadow-sm border border-nimbus-cloud/40 overflow-hidden ${isPastEvent ? 'opacity-80' : ''}`}>
-
+            <form onSubmit={handleSubmit} className="space-y-8">
               {/* SECCIÓN 1: Información básica */}
-              <div className="p-8 border-b border-nimbus-cloud/30">
-                <h2 className="text-xl font-bold text-midnight-blue mb-6 flex items-center gap-2">
-                  <MdInfoOutline className="text-2xl text-midnight-blue/50" /> Información básica
-                </h2>
-
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="col-span-2">
-                      <label className="block text-sm font-bold text-midnight-blue/80 mb-2">Título del evento</label>
-                      <input
-                        name="title" type="text" required value={formData.title} onChange={handleInputChange} disabled={isPastEvent}
-                        className="w-full px-4 py-3 bg-form-bg border border-nimbus-cloud/50 rounded-xl text-midnight-blue focus:ring-2 focus:ring-lemon-icing transition-all disabled:opacity-60"
-                      />
+              <div className={`bg-white rounded-2xl shadow-sm border border-nimbus-cloud/40 overflow-hidden ${isPastEvent ? 'opacity-80' : ''}`}>
+                <div className="p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-full bg-cloud-dancer flex items-center justify-center text-midnight-blue/70">
+                      <MdInfoOutline className="text-xl" />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-bold text-midnight-blue/80 mb-2">Categoría</label>
-                      <div className="relative">
-                        <select
-                          name="category" required value={formData.category} onChange={handleInputChange} disabled={isPastEvent}
-                          className="w-full px-4 py-3 bg-form-bg border border-nimbus-cloud/50 rounded-xl text-midnight-blue focus:ring-2 focus:ring-lemon-icing transition-all appearance-none disabled:opacity-60"
-                        >
-                          <option value="" disabled>Selecciona...</option>
-                          {AVAILABLE_CATEGORIES.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
-                        <MdExpandMore className="absolute right-3 top-1/2 -translate-y-1/2 text-midnight-blue/40 pointer-events-none text-2xl" />
+                      <h2 className="text-xl font-bold text-midnight-blue">
+                        Información básica
+                      </h2>
+                      <p className="text-sm text-midnight-blue/60">
+                        Detalles principales del evento.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-bold text-midnight-blue/90" htmlFor="event-title">
+                        Título del evento
+                      </label>
+                      <input
+                        id="event-title"
+                        name="title" type="text" required value={formData.title} onChange={handleInputChange} disabled={isPastEvent}
+                        className="w-full px-4 py-3 bg-white border border-nimbus-cloud rounded-xl text-midnight-blue focus:ring-2 focus:ring-lemon-icing/80 focus:border-lemon-icing transition-all disabled:opacity-60 placeholder:text-midnight-blue/40"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-bold text-midnight-blue/90" htmlFor="event-category">
+                          Categoría
+                        </label>
+                        <div className="relative">
+                          <select
+                            id="event-category"
+                            name="category" required value={formData.category} onChange={handleInputChange} disabled={isPastEvent}
+                            className="w-full px-4 py-3 bg-white border border-nimbus-cloud rounded-xl text-midnight-blue focus:ring-2 focus:ring-lemon-icing/80 focus:border-lemon-icing transition-all appearance-none cursor-pointer disabled:opacity-60"
+                          >
+                            <option value="" disabled>Selecciona una categoría</option>
+                            {AVAILABLE_CATEGORIES.map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-midnight-blue/50">
+                            <MdExpandMore className="text-2xl" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-bold text-midnight-blue/90" htmlFor="event-date">
+                          Fecha y hora
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="event-date"
+                            name="date" type="datetime-local" required value={formData.date} onChange={handleInputChange} disabled={isPastEvent}
+                            className={`w-full px-4 py-3 bg-white border rounded-xl text-midnight-blue focus:ring-2 transition-all disabled:opacity-60 placeholder:text-midnight-blue/40 ${formErrors.date ? 'border-red-500 focus:ring-red-500' : 'border-nimbus-cloud focus:ring-lemon-icing/80 focus:border-lemon-icing'}`}
+                          />
+                        </div>
+                        {formErrors.date && <p className="text-red-500 text-xs font-bold mt-1">{formErrors.date}</p>}
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-bold text-midnight-blue/80 mb-2">Fecha y hora</label>
-                      <input
-                        name="date" type="datetime-local" required value={formData.date} onChange={handleInputChange} disabled={isPastEvent}
-                        className={`w-full px-4 py-3 bg-form-bg border rounded-xl text-midnight-blue focus:ring-2 transition-all disabled:opacity-60 ${formErrors.date ? 'border-red-500 focus:ring-red-500' : 'border-nimbus-cloud/50 focus:ring-lemon-icing'}`}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-bold text-midnight-blue/90" htmlFor="event-description">
+                        Descripción
+                      </label>
+                      <textarea
+                        id="event-description"
+                        name="description" rows="4" required value={formData.description} onChange={handleInputChange} disabled={isPastEvent}
+                        className="w-full px-4 py-3 bg-white border border-nimbus-cloud rounded-xl text-midnight-blue focus:ring-2 focus:ring-lemon-icing/80 focus:border-lemon-icing transition-all resize-y disabled:opacity-60 min-h-[160px] placeholder:text-midnight-blue/40"
                       />
-                      {formErrors.date && <p className="text-red-500 text-xs font-bold mt-2">{formErrors.date}</p>}
+                      <p className="text-xs text-midnight-blue/50 text-right">
+                        {formData.description.length}/500 caracteres
+                      </p>
                     </div>
 
-                    <div className="col-span-2">
-                      <label className="block text-sm font-bold text-midnight-blue/80 mb-2">Lugar</label>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-bold text-midnight-blue/90" htmlFor="event-location">
+                        Lugar
+                      </label>
                       <div className="relative">
-                        <MdLocationOn className="absolute left-4 top-1/2 -translate-y-1/2 text-midnight-blue/40 pointer-events-none text-xl" />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-midnight-blue/50 pointer-events-none flex items-center">
+                          <MdLocationOn className="text-xl" />
+                        </div>
                         <input
+                          id="event-location"
                           name="location" type="text" required value={formData.location} onChange={handleInputChange} disabled={isPastEvent}
-                          className="w-full pl-11 pr-4 py-3 bg-form-bg border border-nimbus-cloud/50 rounded-xl text-midnight-blue focus:ring-2 transition-all disabled:opacity-60"
+                          className="w-full pl-11 pr-4 py-3 bg-white border border-nimbus-cloud rounded-xl text-midnight-blue focus:ring-2 focus:ring-lemon-icing/80 focus:border-lemon-icing transition-all disabled:opacity-60 placeholder:text-midnight-blue/40"
                         />
                       </div>
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="block text-sm font-bold text-midnight-blue/80 mb-2">Descripción</label>
-                      <textarea
-                        name="description" rows="4" required value={formData.description} onChange={handleInputChange} disabled={isPastEvent}
-                        className="w-full px-4 py-3 bg-form-bg border border-nimbus-cloud/50 rounded-xl text-midnight-blue focus:ring-2 transition-all resize-y disabled:opacity-60"
-                      />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* SECCIÓN 2: Multimedia */}
-              <div className="p-8 border-b border-nimbus-cloud/30">
-                <h2 className="text-xl font-bold text-midnight-blue mb-6 flex items-center gap-2">
-                  <MdImage className="text-2xl text-midnight-blue/50" /> Multimedia
-                </h2>
-                <div>
-                  <label className="block text-sm font-bold text-midnight-blue/80 mb-3">Imagen de portada</label>
+              {/* SECCIÓN 2: Entradas y Precio */}
+              <div className={`bg-white rounded-2xl shadow-sm border border-nimbus-cloud/40 overflow-hidden ${isPastEvent ? 'opacity-80' : ''}`}>
+                <div className="p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-full bg-cloud-dancer flex items-center justify-center text-midnight-blue/70">
+                      <MdLocalActivity className="text-xl" />
+                    </div>
+
+                    <div>
+                      <h2 className="text-xl font-bold text-midnight-blue">
+                        Entradas y Precio
+                      </h2>
+                      <p className="text-sm text-midnight-blue/60">
+                        Gestiona la capacidad y el coste de las entradas.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <div className="md:col-span-6 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-sm font-bold text-midnight-blue/90" htmlFor="event-price">
+                          Precio de entrada
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm text-midnight-blue/70 font-medium cursor-pointer select-none" htmlFor="is-free">
+                            Gratis
+                          </label>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              id="is-free"
+                              type="checkbox"
+                              name="isFree"
+                              checked={formData.isFree}
+                              onChange={handleInputChange}
+                              disabled={isPastEvent}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-nimbus-cloud peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-nimbus-cloud after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-lemon-icing"></div>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-midnight-blue/50 pointer-events-none flex items-center font-bold">
+                          €
+                        </div>
+                        <input
+                          id="event-price"
+                          name="price" type="number" step="0.01" min="0" value={formData.price} onChange={handleInputChange} disabled={formData.isFree || isPastEvent}
+                          className={`w-full pl-10 pr-4 py-3 bg-white border rounded-xl text-midnight-blue focus:ring-2 disabled:bg-cloud-dancer disabled:text-midnight-blue/40 transition-all placeholder:text-midnight-blue/40 ${formErrors.price ? 'border-red-500 focus:ring-red-500' : 'border-nimbus-cloud focus:ring-lemon-icing/80 focus:border-lemon-icing'}`}
+                        />
+                      </div>
+                      {formErrors.price && <p className="text-red-500 text-xs font-bold mt-1">{formErrors.price}</p>}
+                    </div>
+
+                    <div className="md:col-span-6 space-y-2">
+                      <label className="block text-sm font-bold text-midnight-blue/90" htmlFor="event-capacity">
+                        Capacidad / Aforo
+                      </label>
+                      <div className="relative">
+                        <input
+                          id="event-capacity"
+                          name="capacity" type="number" value={formData.capacity} onChange={handleInputChange} disabled={isPastEvent}
+                          className="w-full px-4 py-3 bg-white border border-nimbus-cloud rounded-xl text-midnight-blue focus:ring-2 focus:ring-lemon-icing/80 focus:border-lemon-icing transition-all disabled:opacity-60 placeholder:text-midnight-blue/40"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-12 space-y-2">
+                      <label className="block text-sm font-bold text-midnight-blue/90" htmlFor="event-tickets">
+                        Enlace de venta (Opcional)
+                      </label>
+                      <div className="relative">
+                        <input
+                          id="event-tickets"
+                          name="ticketLink" type="url" placeholder="https://..." value={formData.ticketLink} onChange={handleInputChange} disabled={isPastEvent}
+                          className="w-full px-4 py-3 bg-white border border-nimbus-cloud rounded-xl text-midnight-blue focus:ring-2 focus:ring-lemon-icing/80 focus:border-lemon-icing transition-all disabled:opacity-60 placeholder:text-midnight-blue/40"
+                        />
+                      </div>
+                      <p className="text-xs text-midnight-blue/60">
+                        Si vendes entradas en otra plataforma (Eventbrite, Ticketmaster, etc.), pega el enlace aquí.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECCIÓN 3: Multimedia (Imagen del Cartel) */}
+              <div className={`bg-white rounded-2xl shadow-sm border border-nimbus-cloud/40 overflow-hidden ${isPastEvent ? 'opacity-80' : ''}`}>
+                <div className="p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-full bg-cloud-dancer flex items-center justify-center text-midnight-blue/70">
+                      <MdImage className="text-xl" />
+                    </div>
+
+                    <div>
+                      <h2 className="text-xl font-bold text-midnight-blue">
+                        Multimedia
+                      </h2>
+                      <p className="text-sm text-midnight-blue/60">
+                        Añade imágenes para hacer tu evento más atractivo.
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="flex flex-col sm:flex-row items-start gap-6">
-                    <div className="w-48 aspect-[4/5] rounded-xl overflow-hidden border border-nimbus-cloud/50 relative group shrink-0">
+                    <div className="w-48 aspect-[4/5] rounded-xl overflow-hidden border border-nimbus-cloud/50 relative group shrink-0 bg-form-bg">
                       <img alt="Portada actual" className="w-full h-full object-cover" src={imagePreview || "https://images.unsplash.com/photo-1533174000222-edfe3abc5496?q=80&w=2070"} />
                       {!isPastEvent && (
                         <div className="absolute inset-0 bg-midnight-blue/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                          <button type="button" onClick={() => { setImagePreview(""); setImageFile(null); }} className="w-10 h-10 bg-white text-red-500 rounded-full flex items-center justify-center hover:scale-110 shadow-lg">
+                          <button type="button" onClick={() => { setImagePreview(""); setImageFile(null); }} className="w-10 h-10 bg-white text-red-500 rounded-full flex items-center justify-center hover:scale-110 shadow-lg transition-transform">
                             <MdDelete className="text-xl" />
                           </button>
                         </div>
@@ -347,11 +472,11 @@ export default function EditEventPage({ params }) {
                     </div>
                     <div className="flex flex-col gap-3">
                       <p className="text-sm text-midnight-blue/60 max-w-xs leading-relaxed">
-                        Esta imagen aparecerá en la cartelera y en los detalles del evento. Se recomienda formato vertical 4:5.
+                        Esta imagen aparecerá en la cartelera y en los detalles del evento. Se recomienda formato horizontal 16:9.
                       </p>
                       <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} disabled={isPastEvent} />
                       <div className="flex gap-3 mt-2">
-                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isPastEvent} className="px-5 py-2.5 bg-white border border-nimbus-cloud text-midnight-blue font-bold rounded-xl hover:bg-cloud-dancer disabled:opacity-50">
+                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isPastEvent} className="px-5 py-2.5 bg-white border border-nimbus-cloud text-midnight-blue font-bold rounded-xl hover:bg-cloud-dancer disabled:opacity-50 transition-colors">
                           Cambiar imagen
                         </button>
                       </div>
@@ -360,98 +485,44 @@ export default function EditEventPage({ params }) {
                 </div>
               </div>
 
-              {/* SECCIÓN 3: Entradas */}
-              <div className="p-8">
-                <h2 className="text-xl font-bold text-midnight-blue mb-6 flex items-center gap-2">
-                  <MdLocalActivity className="text-2xl text-midnight-blue/50" /> Entradas y Precio
-                </h2>
-                <div className="space-y-6">
-
-                  <div className={`flex items-center justify-between p-5 bg-form-bg rounded-2xl border border-nimbus-cloud/40 ${isPastEvent ? 'opacity-60' : ''}`}>
-                    <div>
-                      <span className="block font-bold text-midnight-blue">Evento Gratuito</span>
-                      <span className="text-sm text-midnight-blue/60 font-medium mt-0.5">Activa esta opción si la entrada es libre</span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" name="isFree" checked={formData.isFree} onChange={handleInputChange} disabled={isPastEvent} className="sr-only peer" />
-                      <div className="w-11 h-6 bg-nimbus-cloud peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-nimbus-cloud after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-lemon-icing"></div>
-                    </label>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-bold text-midnight-blue/80 mb-2">Precio de entrada (€)</label>
-                      <input
-                        name="price" type="number" step="0.01" min="0" value={formData.price} onChange={handleInputChange} disabled={formData.isFree || isPastEvent}
-                        className={`w-full px-4 py-3 bg-form-bg border rounded-xl text-midnight-blue focus:ring-2 transition-all disabled:opacity-50 ${formErrors.price ? 'border-red-500 focus:ring-red-500' : 'border-nimbus-cloud/50 focus:ring-lemon-icing'}`}
-                      />
-                      {formErrors.price && <p className="text-red-500 text-xs font-bold mt-2">{formErrors.price}</p>}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-bold text-midnight-blue/80 mb-2">Capacidad / Aforo</label>
-                      <input
-                        name="capacity" type="number" value={formData.capacity} onChange={handleInputChange} disabled={isPastEvent}
-                        className="w-full px-4 py-3 bg-form-bg border border-nimbus-cloud/50 rounded-xl text-midnight-blue focus:ring-2 transition-all disabled:opacity-60"
-                      />
-                    </div>
-                    
-                    <div className="col-span-2">
-                      <label className="block text-sm font-bold text-midnight-blue/80 mb-2">Enlace de venta (Opcional)</label>
-                      <input
-                        name="ticketLink" type="url" placeholder="https://..." value={formData.ticketLink} onChange={handleInputChange} disabled={isPastEvent}
-                        className="w-full px-4 py-3 bg-form-bg border border-nimbus-cloud/50 rounded-xl text-midnight-blue focus:ring-2 transition-all disabled:opacity-60"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Botones de Guardar / Cancelar */}
-              <div className="p-8 pt-0 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center justify-between gap-4 pt-4 pb-12">
                 <button type="button" disabled={isPastEvent} className="text-sm font-bold text-red-500 hover:text-red-700 hover:underline transition-colors w-full sm:w-auto text-left disabled:opacity-50 disabled:hover:no-underline">
-                  Eliminar evento permanentemente
+                  Eliminar evento
                 </button>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <button type="button" disabled={isSaving} onClick={() => router.push(`/event/${id}`)} className="flex-1 sm:flex-none px-6 py-3 rounded-xl border bg-white text-midnight-blue font-bold hover:bg-cloud-dancer disabled:opacity-50">
+                <div className="flex items-center gap-4">
+                  <button type="button" disabled={isSaving} onClick={() => router.push(`/event/${id}`)} className="px-6 py-3 bg-white border border-nimbus-cloud text-midnight-blue/80 font-bold rounded-xl hover:bg-cloud-dancer hover:text-midnight-blue transition-all shadow-sm disabled:opacity-50">
                     Cancelar
                   </button>
-                  <button type="submit" disabled={isSaving || isPastEvent} className="flex-1 sm:flex-none px-8 py-3 rounded-xl bg-lemon-icing text-midnight-blue font-bold hover:brightness-95 disabled:opacity-50">
+                  <button type="submit" disabled={isSaving || isPastEvent} className="px-8 py-3 bg-lemon-icing hover:brightness-95 text-midnight-blue font-bold rounded-xl shadow-lg shadow-lemon-icing/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 disabled:opacity-50 disabled:hover:translate-y-0">
                     {isSaving ? "Guardando..." : "Guardar Cambios"}
                   </button>
                 </div>
               </div>
             </form>
-            <div className="h-12"></div>
           </div>
         </div>
       </main>
 
       {/* ASIDE DERECHO (Ayuda y Estado) */}
-      <aside className="w-80 bg-white border-l border-nimbus-cloud/40 p-6 flex flex-col gap-6 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto hidden xl:flex shrink-0">
+      <aside className="w-80 bg-white border-l border-nimbus-cloud/40 p-6 flex flex-col justify-between gap-6 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto hidden xl:flex shrink-0">
 
         <div className="bg-white border border-nimbus-cloud/40 rounded-2xl p-6 shadow-sm">
           <h3 className="text-xs font-bold text-midnight-blue/50 uppercase tracking-wider mb-4">Estado del evento</h3>
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-3 ">
             <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
             <span className="text-green-600 font-bold text-lg">Publicado</span>
           </div>
-          <button className="w-full py-2.5 px-4 border border-nimbus-cloud/50 rounded-xl text-sm font-bold text-midnight-blue/70 hover:bg-cloud-dancer hover:text-midnight-blue transition-colors">
-            Pasar a borrador
-          </button>
         </div>
 
-      
-
-        <div className="mt-auto bg-nimbus-cloud rounded-3xl p-6 relative overflow-hidden text-midnight-blue border border-nimbus-cloud/40">
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/50 rounded-full blur-2xl"></div>
-          <div className="relative z-10 flex flex-col gap-4">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-midnight-blue mb-1 shadow-sm">
+        <div className="bg-nimbus-cloud/40 rounded-2xl p-6 relative overflow-hidden shadow-sm">
+          <div className="flex items-start gap-4 relative z-10">
+            <div className="w-10 h-10 rounded-full bg-midnight-blue text-white flex items-center justify-center shrink-0 shadow-lg shadow-midnight-blue/20">
               <MdLightbulbOutline className="text-xl" />
             </div>
-            <div>
-              <h4 className="font-bold text-lg leading-tight mb-2 text-midnight-blue">Consejos rápidos</h4>
-              <ul className="text-midnight-blue/70 text-sm leading-relaxed list-disc pl-4 space-y-1 font-medium">
+            <div className="flex-1">
+              <h4 className="font-bold text-midnight-blue mb-2">Consejos rápidos</h4>
+              <ul className="text-sm text-midnight-blue/80 space-y-2 list-disc list-inside marker:text-midnight-blue/50">
                 <li>El cartel debe verse bien en horizontal (16:9).</li>
                 <li>Verifica siempre la hora exacta.</li>
                 <li>Escribe un título corto y llamativo.</li>
