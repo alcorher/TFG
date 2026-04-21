@@ -20,11 +20,11 @@ export default function PublicProfilePage() {
   
   const [profileData, setProfileData] = useState(null);
   const [eventos, setEventos] = useState([]);
+  const [favoritos, setFavoritos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
-  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
   useEffect(() => {
     async function loadPublicProfile() {
@@ -32,7 +32,6 @@ export default function PublicProfilePage() {
         // Check if this is the current user's own profile
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user.id === id) {
-          // Redirect to /profile (own profile)
           router.replace('/profile');
           return;
         }
@@ -47,6 +46,7 @@ export default function PublicProfilePage() {
         const data = await res.json();
         setProfileData(data.perfil);
         setEventos(data.eventos || []);
+        setFavoritos(data.favoritos || []);
 
       } catch (err) {
         console.error("Error cargando perfil público:", err);
@@ -157,9 +157,9 @@ export default function PublicProfilePage() {
           </div>
 
           <div className="max-w-7xl mx-auto px-8 py-8">
-            {/* Tarjetas de Info */}
-            <div className={`grid grid-cols-1 ${isOrganizer ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6 mb-10`}>
-              {isOrganizer && (
+            {/* Tarjetas de Estadísticas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+              {isOrganizer ? (
                 <div className="bg-white rounded-2xl p-5 border border-nimbus-cloud/30 shadow-sm flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
                     <MdEventNote className="text-2xl" />
@@ -167,6 +167,16 @@ export default function PublicProfilePage() {
                   <div>
                     <p className="text-sm text-midnight-blue/60 font-medium">Eventos publicados</p>
                     <p className="text-2xl font-bold text-midnight-blue">{eventos.length}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl p-5 border border-nimbus-cloud/30 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-red-50 text-red-500 flex items-center justify-center">
+                    <MdBookmark className="text-2xl" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-midnight-blue/60 font-medium">Eventos favoritos</p>
+                    <p className="text-2xl font-bold text-midnight-blue">{favoritos.length}</p>
                   </div>
                 </div>
               )}
@@ -220,13 +230,39 @@ export default function PublicProfilePage() {
               </div>
             )}
 
-            {/* Mensaje para usuarios normales sin eventos */}
+            {/* Favoritos del usuario */}
             {!isOrganizer && (
-              <div className="text-center py-20 bg-white/40 rounded-3xl border-2 border-dashed border-nimbus-cloud/30">
-                <MdGroup className="text-5xl text-midnight-blue/20 mx-auto mb-4" />
-                <p className="text-slate-500 font-medium">Este es el perfil de {profileData.nombre}.</p>
-                {profileData.biografia && (
-                  <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">{profileData.biografia}</p>
+              <div className="mb-12">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-midnight-blue">Favoritos de {profileData.nombre}</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-midnight-blue/40 uppercase tracking-wider hidden sm:block">Vista:</span>
+                    <button 
+                      onClick={() => setViewMode('grid')}
+                      className={`p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm border border-nimbus-cloud/50 text-midnight-blue' : 'text-midnight-blue/40 hover:text-midnight-blue/70 hover:bg-white/50'}`}
+                    >
+                      <MdGridView className="text-xl" />
+                    </button>
+                    <button 
+                      onClick={() => setViewMode('list')}
+                      className={`p-1.5 rounded transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm border border-nimbus-cloud/50 text-midnight-blue' : 'text-midnight-blue/40 hover:text-midnight-blue/70 hover:bg-white/50'}`}
+                    >
+                      <MdViewList className="text-xl" />
+                    </button>
+                  </div>
+                </div>
+
+                {favoritos.length === 0 ? (
+                  <div className="text-center py-20 bg-white/40 rounded-3xl border-2 border-dashed border-nimbus-cloud/30">
+                    <MdBookmark className="text-5xl text-midnight-blue/20 mx-auto mb-4" />
+                    <p className="text-slate-500 font-medium">{profileData.nombre} aún no tiene eventos favoritos.</p>
+                  </div>
+                ) : (
+                  <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                    {favoritos.map(evento => (
+                      <EventCard key={evento.id_evento || evento.id} evento={evento} />
+                    ))}
+                  </div>
                 )}
               </div>
             )}
@@ -236,7 +272,6 @@ export default function PublicProfilePage() {
 
       {/* ASIDE DERECHO — Desktop */}
       <aside className="w-80 bg-white border-l border-nimbus-cloud/40 p-6 flex flex-col gap-8 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto hidden xl:flex shrink-0">
-        {/* Info del usuario */}
         <div className="bg-white rounded-2xl flex flex-col gap-4">
           <h3 className="text-midnight-blue font-bold text-lg">Sobre {profileData.nombre}</h3>
           
@@ -257,6 +292,13 @@ export default function PublicProfilePage() {
             <div className="flex items-center gap-2 text-sm text-orange-600">
               <MdEventNote className="text-lg" />
               <span className="font-medium">{eventos.length} eventos publicados</span>
+            </div>
+          )}
+
+          {!isOrganizer && (
+            <div className="flex items-center gap-2 text-sm text-red-500">
+              <MdBookmark className="text-lg" />
+              <span className="font-medium">{favoritos.length} eventos favoritos</span>
             </div>
           )}
         </div>
@@ -305,10 +347,15 @@ export default function PublicProfilePage() {
             </div>
           )}
 
-          {isOrganizer && (
+          {isOrganizer ? (
             <div className="flex items-center gap-2 text-sm text-orange-600">
               <MdEventNote className="text-lg" />
               <span className="font-medium">{eventos.length} eventos publicados</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-sm text-red-500">
+              <MdBookmark className="text-lg" />
+              <span className="font-medium">{favoritos.length} eventos favoritos</span>
             </div>
           )}
         </aside>

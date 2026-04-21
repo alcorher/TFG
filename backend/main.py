@@ -115,9 +115,11 @@ def obtener_perfil_publico(user_id: str):
         
         perfil = response.data
         
-        # Si es empresario, obtener sus eventos
         eventos = []
+        favoritos = []
+
         if perfil and perfil.get("rol") == "Empresario":
+            # Empresario: obtener sus eventos creados
             ev_response = supabase.table("eventos").select(
                 "id_evento, nombre, descripcion, lugar, fecha, hora, precio, cartel_url, categoria, aforo_max, estado, id_empresario, favoritos(count)"
             ).eq("id_empresario", user_id).order("fecha", desc=True).execute()
@@ -133,8 +135,30 @@ def obtener_perfil_publico(user_id: str):
                         count = fav_data.get("count", 0)
                 evento_mod["likes"] = count
                 eventos.append(evento_mod)
+        else:
+            # Usuario normal: obtener sus favoritos
+            fav_response = supabase.table("favoritos").select("id_evento").eq("id_usuario", user_id).execute()
+            
+            if fav_response.data:
+                event_ids = [f["id_evento"] for f in fav_response.data]
+                
+                ev_response = supabase.table("eventos").select(
+                    "id_evento, nombre, descripcion, lugar, fecha, hora, precio, cartel_url, categoria, aforo_max, estado, id_empresario, favoritos(count)"
+                ).in_("id_evento", event_ids).order("fecha").execute()
+                
+                for e in ev_response.data:
+                    evento_mod = e.copy()
+                    count = 0
+                    if "favoritos" in e and e["favoritos"]:
+                        fav_data = e["favoritos"]
+                        if isinstance(fav_data, list) and len(fav_data) > 0:
+                            count = fav_data[0].get("count", 0)
+                        elif isinstance(fav_data, dict):
+                            count = fav_data.get("count", 0)
+                    evento_mod["likes"] = count
+                    favoritos.append(evento_mod)
         
-        return {"perfil": perfil, "eventos": eventos}
+        return {"perfil": perfil, "eventos": eventos, "favoritos": favoritos}
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Perfil no encontrado: {str(e)}")
     
