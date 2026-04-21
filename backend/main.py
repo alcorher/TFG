@@ -502,3 +502,63 @@ async def toggle_favorito(evento_id: str, authorization: str = Header(None)):
     except Exception as e:
         print(f"Error al alternar favorito: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/empresarios")
+def obtener_empresarios(current_user = Depends(get_current_user)):
+    """Obtiene los empresarios creados por el administrador autenticado"""
+    try:
+        # 1. Verificar que el usuario es Administrador
+        admin_check = supabase.table("usuarios").select("rol").eq("id_usuario", current_user.id).single().execute()
+        if not admin_check.data or admin_check.data.get("rol") != "Administrador":
+            raise HTTPException(status_code=403, detail="Acceso restringido a administradores")
+
+        # 2. Obtener solo los empresarios que este admin ha creado
+        response = supabase.table("usuarios").select(
+            "id_usuario, nombre, email, avatar_url, banner_url, username, biografia, ubicacion"
+        ).eq("rol", "Empresario").eq("creado_por", current_user.id).order("nombre").execute()
+
+        empresarios = []
+        for emp in response.data:
+            # Contar eventos publicados por cada empresario
+            try:
+                ev_response = supabase.table("eventos").select(
+                    "id_evento", count="exact"
+                ).eq("id_empresario", emp["id_usuario"]).execute()
+                num_eventos = ev_response.count if ev_response.count is not None else 0
+            except Exception:
+                num_eventos = 0
+
+            empresarios.append({
+                **emp,
+                "num_eventos": num_eventos
+            })
+
+        return {"mensaje": "Empresarios recuperados con éxito", "data": empresarios}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al obtener los empresarios: {str(e)}")
+
+@app.delete("/api/empresarios/{user_id}")
+def eliminar_empresario(user_id: str, current_user = Depends(get_current_user)):
+    """Revoca el rol de un empresario (pasa a Cliente). Solo el admin que lo creó puede hacerlo."""
+    try:
+        # 1. Verificar que es Administrador
+        admin_check = supabase.table("usuarios").select("rol").eq("id_usuario", current_user.id).single().execute()
+        if not admin_check.data or admin_check.data.get("rol") != "Administrador":
+            raise HTTPException(status_code=403, detail="Solo los administradores pueden realizar esta acción")
+
+        # 2. Verificar que el empresario fue creado por este admin
+        emp_check = supabase.table("usuarios").select("creado_por").eq("id_usuario", user_id).single().execute()
+        if not emp_check.data or emp_check.data.get("creado_por") != current_user.id:
+            raise HTTPException(status_code=403, detail="Solo puedes gestionar los empresarios que tú creaste")
+
+        # 3. Degradar rol a Cliente
+        response = supabase.table("usuarios").update({"rol": "Cliente", "creado_por": None}).eq("id_usuario", user_id).execute()
+        return {"mensaje": "Rol revocado con éxito", "data": response.data}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al revocar el rol: {str(e)}")
+
