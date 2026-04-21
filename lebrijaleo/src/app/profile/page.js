@@ -52,7 +52,7 @@ export default function ProfilePage() {
           nombre: profileData.nombre || session.user.email?.split('@')[0] || 'Usuario',
           bio: profileData.biografia || '',
           avatar_url: profileData.avatar_url || '',
-          cover_url: profileData.banner_url || '',
+          banner_url: profileData.banner_url || '',
           username: profileData.username || '',
           ubicacion: profileData.ubicacion || '',
           rol: profileData.rol || 'Cliente',
@@ -146,7 +146,7 @@ export default function ProfilePage() {
               <img 
                 alt="Portada del perfil" 
                 className="w-full h-full object-cover opacity-80" 
-                src={userProfile.cover_url || defaultBanner}
+                src={userProfile.banner_url || defaultBanner}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
             </div>

@@ -6,7 +6,7 @@ import Sidebar from '@/components/layout/Navbar';
 import EventCard from '@/components/events/EventCard';
 import { createClient } from '@/utils/supabase/client';
 import { 
-  MdArrowBack, MdMenu, MdClose, MdGroup, 
+  MdArrowBack, MdGroup, 
   MdBookmark, MdGridView, MdViewList, 
   MdEventNote, MdInfoOutline, MdLocationOn
 } from "react-icons/md";
@@ -23,7 +23,6 @@ export default function PublicProfilePage() {
   const [favoritos, setFavoritos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showMobilePanel, setShowMobilePanel] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
 
   useEffect(() => {
@@ -107,14 +106,6 @@ export default function PublicProfilePage() {
             <h2 className="text-lg font-bold text-midnight-blue">
               {isOrganizer ? 'Perfil de Organizador' : 'Perfil de Usuario'}
             </h2>
-          </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setShowMobilePanel(true)}
-              className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors xl:hidden"
-            >
-              <MdMenu className="text-xl" />
-            </button>
           </div>
         </header>
 
@@ -269,97 +260,6 @@ export default function PublicProfilePage() {
           </div>
         </div>
       </main>
-
-      {/* ASIDE DERECHO — Desktop */}
-      <aside className="w-80 bg-white border-l border-nimbus-cloud/40 p-6 flex flex-col gap-8 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto hidden xl:flex shrink-0">
-        <div className="bg-white rounded-2xl flex flex-col gap-4">
-          <h3 className="text-midnight-blue font-bold text-lg">Sobre {profileData.nombre}</h3>
-          
-          {profileData.biografia && (
-            <p className="text-midnight-blue/70 text-sm leading-relaxed font-medium">
-              {profileData.biografia}
-            </p>
-          )}
-
-          {profileData.ubicacion && (
-            <div className="flex items-center gap-2 text-sm text-midnight-blue/60">
-              <MdLocationOn className="text-lg" />
-              <span className="font-medium">{profileData.ubicacion}</span>
-            </div>
-          )}
-
-          {isOrganizer && (
-            <div className="flex items-center gap-2 text-sm text-orange-600">
-              <MdEventNote className="text-lg" />
-              <span className="font-medium">{eventos.length} eventos publicados</span>
-            </div>
-          )}
-
-          {!isOrganizer && (
-            <div className="flex items-center gap-2 text-sm text-red-500">
-              <MdBookmark className="text-lg" />
-              <span className="font-medium">{favoritos.length} eventos favoritos</span>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="text-center pb-2 mt-auto">
-          <p className="text-xs text-midnight-blue/40 font-medium">© 2026 LebriJaleo App.</p>
-        </div>
-      </aside>
-
-      {/* PANEL MÓVIL — Overlay + Drawer */}
-      <div 
-        className={`fixed inset-0 z-50 xl:hidden transition-opacity duration-300 ${
-          showMobilePanel ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-      >
-        <div 
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
-          onClick={() => setShowMobilePanel(false)} 
-        />
-        <aside 
-          className={`absolute top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl p-6 flex flex-col gap-8 overflow-y-auto transition-transform duration-300 ease-out ${
-            showMobilePanel ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="text-midnight-blue font-bold text-lg">Sobre {profileData.nombre}</h3>
-            <button 
-              onClick={() => setShowMobilePanel(false)}
-              className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors"
-            >
-              <MdClose className="text-xl" />
-            </button>
-          </div>
-
-          {profileData.biografia && (
-            <p className="text-midnight-blue/70 text-sm leading-relaxed font-medium">
-              {profileData.biografia}
-            </p>
-          )}
-
-          {profileData.ubicacion && (
-            <div className="flex items-center gap-2 text-sm text-midnight-blue/60">
-              <MdLocationOn className="text-lg" />
-              <span className="font-medium">{profileData.ubicacion}</span>
-            </div>
-          )}
-
-          {isOrganizer ? (
-            <div className="flex items-center gap-2 text-sm text-orange-600">
-              <MdEventNote className="text-lg" />
-              <span className="font-medium">{eventos.length} eventos publicados</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-sm text-red-500">
-              <MdBookmark className="text-lg" />
-              <span className="font-medium">{favoritos.length} eventos favoritos</span>
-            </div>
-          )}
-        </aside>
-      </div>
     </div>
   );
 }
