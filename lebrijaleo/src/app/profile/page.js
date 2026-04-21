@@ -8,7 +8,7 @@ import { createClient } from '@/utils/supabase/client';
 import { 
   MdArrowBack, MdMenu, MdClose, MdGroup, 
   MdBookmark, MdGridView, MdViewList, MdEdit, 
-  MdLogout
+  MdLogout, MdEventNote
 } from "react-icons/md";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -20,11 +20,13 @@ export default function ProfilePage() {
   // Estados para guardar la info del usuario
   const [userProfile, setUserProfile] = useState(null);
   const [favorites, setFavorites] = useState([]);
+  const [myEvents, setMyEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
+  const [viewMode, setViewMode] = useState('grid');
 
   useEffect(() => {
-    async function loadProfileAndFavorites() {
+    async function loadProfileAndData() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -40,29 +42,23 @@ export default function ProfilePage() {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
+        let profileData = {};
         if (profileRes.ok) {
-          const profileData = await profileRes.json();
-          setUserProfile({
-            id: session.user.id,
-            nombre: profileData.nombre || 'Usuario',
-            bio: profileData.biografia || '',
-            avatar_url: profileData.avatar_url || '',
-            cover_url: profileData.banner_url || '',
-            username: profileData.username || '',
-            ubicacion: profileData.ubicacion || '',
-          });
-        } else {
-          // Fallback mínimo si la API falla
-          setUserProfile({
-            id: session.user.id,
-            nombre: session.user.email?.split('@')[0] || 'Usuario',
-            bio: '',
-            avatar_url: '',
-            cover_url: '',
-            username: '',
-            ubicacion: '',
-          });
+          profileData = await profileRes.json();
         }
+
+        const profile = {
+          id: session.user.id,
+          nombre: profileData.nombre || session.user.email?.split('@')[0] || 'Usuario',
+          bio: profileData.biografia || '',
+          avatar_url: profileData.avatar_url || '',
+          cover_url: profileData.banner_url || '',
+          username: profileData.username || '',
+          ubicacion: profileData.ubicacion || '',
+          rol: profileData.rol || 'Cliente',
+        };
+
+        setUserProfile(profile);
 
         // Fetch de los favoritos reales desde la API
         const favRes = await fetch(`${API_URL}/api/mis-favoritos`, {
@@ -74,6 +70,18 @@ export default function ProfilePage() {
           setFavorites(favData.data || []);
         }
 
+        // Si es organizador/empresario, cargar sus eventos
+        if (profile.rol === 'Empresario') {
+          const eventsRes = await fetch(`${API_URL}/api/mis-eventos`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+
+          if (eventsRes.ok) {
+            const eventsData = await eventsRes.json();
+            setMyEvents(eventsData.data || []);
+          }
+        }
+
       } catch (error) {
         console.error("Error cargando perfil:", error);
       } finally {
@@ -81,7 +89,7 @@ export default function ProfilePage() {
       }
     }
 
-    loadProfileAndFavorites();
+    loadProfileAndData();
   }, [router, supabase]);
 
   const handleLogout = async () => {
@@ -102,6 +110,7 @@ export default function ProfilePage() {
 
   const defaultAvatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(userProfile.nombre) + "&background=F6EBC8&color=1e293b";
   const defaultBanner = "https://images.unsplash.com/photo-1518605368461-1ee46062f6b8?q=80&w=2093";
+  const isOrganizer = userProfile.rol === 'Empresario';
 
   return (
     <div className="bg-cloud-dancer text-midnight-blue font-display antialiased overflow-hidden h-screen flex">
@@ -116,7 +125,9 @@ export default function ProfilePage() {
             >
               <MdArrowBack className="text-xl" />
             </button>
-            <h2 className="text-lg font-bold text-midnight-blue">Perfil de Usuario</h2>
+            <h2 className="text-lg font-bold text-midnight-blue">
+              {isOrganizer ? 'Perfil de Organizador' : 'Perfil de Usuario'}
+            </h2>
           </div>
           <div className="flex items-center gap-3">
             <button 
@@ -162,8 +173,8 @@ export default function ProfilePage() {
           </div>
 
           <div className="max-w-7xl mx-auto px-8 py-8">
-            {/* Tarjeta de Estadísticas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            {/* Tarjetas de Estadísticas */}
+            <div className={`grid grid-cols-1 ${isOrganizer ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6 mb-10`}>
               <div className="bg-white rounded-2xl p-5 border border-nimbus-cloud/30 shadow-sm flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-red-50 text-red-500 flex items-center justify-center">
                   <MdBookmark className="text-2xl" />
@@ -173,6 +184,17 @@ export default function ProfilePage() {
                   <p className="text-2xl font-bold text-midnight-blue">{favorites.length}</p>
                 </div>
               </div>
+              {isOrganizer && (
+                <div className="bg-white rounded-2xl p-5 border border-nimbus-cloud/30 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+                    <MdEventNote className="text-2xl" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-midnight-blue/60 font-medium">Eventos creados</p>
+                    <p className="text-2xl font-bold text-midnight-blue">{myEvents.length}</p>
+                  </div>
+                </div>
+              )}
               {userProfile.ubicacion && (
                 <div className="bg-white rounded-2xl p-5 border border-nimbus-cloud/30 shadow-sm flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -185,6 +207,44 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
+
+            {/* Sección Mis Eventos (solo organizadores) */}
+            {isOrganizer && (
+              <div className="mb-12">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-midnight-blue">Mis Eventos</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-midnight-blue/40 uppercase tracking-wider hidden sm:block">Vista:</span>
+                    <button 
+                      onClick={() => setViewMode('grid')}
+                      className={`p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm border border-nimbus-cloud/50 text-midnight-blue' : 'text-midnight-blue/40 hover:text-midnight-blue/70 hover:bg-white/50'}`}
+                    >
+                      <MdGridView className="text-xl" />
+                    </button>
+                    <button 
+                      onClick={() => setViewMode('list')}
+                      className={`p-1.5 rounded transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm border border-nimbus-cloud/50 text-midnight-blue' : 'text-midnight-blue/40 hover:text-midnight-blue/70 hover:bg-white/50'}`}
+                    >
+                      <MdViewList className="text-xl" />
+                    </button>
+                  </div>
+                </div>
+
+                {myEvents.length === 0 ? (
+                  <div className="text-center py-20 bg-white/40 rounded-3xl border-2 border-dashed border-nimbus-cloud/30">
+                    <MdEventNote className="text-5xl text-midnight-blue/20 mx-auto mb-4" />
+                    <p className="text-slate-500 font-medium">Aún no has creado ningún evento.</p>
+                    <p className="text-slate-400 text-sm mt-1">Crea tu primer evento y compártelo con la comunidad.</p>
+                  </div>
+                ) : (
+                  <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                    {myEvents.map(evento => (
+                      <EventCard key={evento.id_evento || evento.id} evento={evento} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Sección Mis Favoritos */}
             <div className="mb-12">
@@ -199,12 +259,12 @@ export default function ProfilePage() {
                   <p className="text-slate-400 text-sm mt-1">Explora la cartelera y guarda los que más te gusten.</p>
                 </div>
               ) : (
-                    <div className={`grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3`}>
-                    {favorites.map(evento => (
-                        <EventCard key={evento.id_evento || evento.id} evento={evento} />
-                    ))}
-                    </div>
-                )}
+                <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                  {favorites.map(evento => (
+                    <EventCard key={evento.id_evento || evento.id} evento={evento} />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -212,7 +272,6 @@ export default function ProfilePage() {
 
       {/* ASIDE DERECHO (Acciones) — Desktop */}
       <aside className="w-80 bg-white border-l border-nimbus-cloud/40 p-6 flex flex-col gap-8 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto hidden xl:flex shrink-0">
-        {/* Acciones */}
         <div className="bg-white rounded-2xl flex flex-col gap-3">
           <h3 className="text-midnight-blue font-bold text-lg">Acciones</h3>
           <button 
@@ -222,6 +281,15 @@ export default function ProfilePage() {
             <MdEdit className="text-xl" />
             <span>Editar Perfil</span>
           </button>
+          {isOrganizer && (
+            <button 
+              onClick={() => router.push('/createEvent')}
+              className="w-full py-3 bg-white border border-nimbus-cloud/50 hover:bg-cloud-dancer text-midnight-blue/70 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
+            >
+              <MdEventNote className="text-xl" />
+              <span>Crear Evento</span>
+            </button>
+          )}
           <button 
             onClick={handleLogout}
             className="w-full py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-sm transition-all flex items-center justify-start gap-3 border border-red-100"
@@ -266,6 +334,15 @@ export default function ProfilePage() {
               <MdEdit className="text-xl" />
               <span>Editar Perfil</span>
             </button>
+            {isOrganizer && (
+              <button 
+                onClick={() => { setShowMobilePanel(false); router.push('/createEvent'); }}
+                className="w-full py-3 bg-white border border-nimbus-cloud/50 hover:bg-cloud-dancer text-midnight-blue/70 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
+              >
+                <MdEventNote className="text-xl" />
+                <span>Crear Evento</span>
+              </button>
+            )}
             <button 
               onClick={handleLogout}
               className="w-full py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-sm transition-all flex items-center justify-start gap-3 border border-red-100"

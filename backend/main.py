@@ -80,7 +80,7 @@ def obtener_perfil(current_user = Depends(get_current_user)):
     """Obtiene los datos del perfil del usuario autenticado"""
     try:
         # Buscamos en la tabla 'usuarios' usando el ID validado del token
-        response = supabase.table("usuarios").select("nombre, username, biografia, ubicacion, avatar_url, banner_url").eq("id_usuario", current_user.id).single().execute()
+        response = supabase.table("usuarios").select("nombre, username, biografia, ubicacion, avatar_url, banner_url, rol").eq("id_usuario", current_user.id).single().execute()
         return response.data
     except Exception as e:
         raise HTTPException(status_code=404, detail="Perfil no encontrado")
@@ -104,6 +104,39 @@ def actualizar_perfil(perfil: PerfilUpdate, current_user = Depends(get_current_u
         return {"mensaje": "Perfil actualizado con éxito", "data": datos_actualizados}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error al actualizar el perfil: {str(e)}")
+
+@app.get("/api/perfil/{user_id}")
+def obtener_perfil_publico(user_id: str):
+    """Obtiene el perfil público de cualquier usuario por su ID"""
+    try:
+        response = supabase.table("usuarios").select(
+            "id_usuario, nombre, username, biografia, ubicacion, avatar_url, banner_url, rol"
+        ).eq("id_usuario", user_id).single().execute()
+        
+        perfil = response.data
+        
+        # Si es empresario, obtener sus eventos
+        eventos = []
+        if perfil and perfil.get("rol") == "Empresario":
+            ev_response = supabase.table("eventos").select(
+                "id_evento, nombre, descripcion, lugar, fecha, hora, precio, cartel_url, categoria, aforo_max, estado, id_empresario, favoritos(count)"
+            ).eq("id_empresario", user_id).order("fecha", desc=True).execute()
+            
+            for e in ev_response.data:
+                evento_mod = e.copy()
+                count = 0
+                if "favoritos" in e and e["favoritos"]:
+                    fav_data = e["favoritos"]
+                    if isinstance(fav_data, list) and len(fav_data) > 0:
+                        count = fav_data[0].get("count", 0)
+                    elif isinstance(fav_data, dict):
+                        count = fav_data.get("count", 0)
+                evento_mod["likes"] = count
+                eventos.append(evento_mod)
+        
+        return {"perfil": perfil, "eventos": eventos}
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Perfil no encontrado: {str(e)}")
     
 # --- ENDPOINTS DE EVENTOS ---
 
