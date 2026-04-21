@@ -554,11 +554,13 @@ def eliminar_empresario(user_id: str, current_user = Depends(get_current_user)):
         if not emp_check.data or emp_check.data.get("creado_por") != current_user.id:
             raise HTTPException(status_code=403, detail="Solo puedes gestionar los empresarios que tú creaste")
 
-        # 3. Degradar rol a Cliente
+        # 3. Cancelar todos sus eventos activos
+        supabase.table("eventos").update({"estado": "Cancelado"}).eq("id_empresario", user_id).eq("estado", "Activo").execute()
+
+        # 4. Degradar rol a Cliente
         response = supabase.table("usuarios").update({"rol": "Cliente", "creado_por": None}).eq("id_usuario", user_id).execute()
-        return {"mensaje": "Rol revocado con éxito", "data": response.data}
+        return {"mensaje": "Rol revocado con éxito. Sus eventos han sido cancelados.", "data": response.data}
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error al revocar el rol: {str(e)}")
-
