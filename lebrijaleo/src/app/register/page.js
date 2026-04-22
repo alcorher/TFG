@@ -10,9 +10,9 @@ export const metadata = {
 
 export default function RegisterPage() {
   return (
-    <div className="bg-cloud-dancer font-display antialiased h-screen w-full overflow-hidden flex text-midnight-blue">
+    <div className="bg-cloud-dancer font-display antialiased min-h-screen min-h-[100dvh] w-full flex text-midnight-blue">
       {/* Columna Izquierda */}
-      <div className="hidden lg:flex lg:w-[60%] relative h-full bg-midnight-blue overflow-hidden group">
+      <div className="hidden lg:flex lg:w-[60%] relative h-screen sticky top-0 bg-midnight-blue overflow-hidden group">
         <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
           style={{
@@ -46,8 +46,8 @@ export default function RegisterPage() {
       </div>
 
       {/* Columna Derecha */}
-      <div className="w-full lg:w-[40%] h-full bg-form-bg flex flex-col justify-center items-center overflow-y-auto">
-        <div className="w-full max-w-[480px] px-8 py-12 flex flex-col gap-8">
+      <div className="w-full lg:w-[40%] min-h-screen min-h-[100dvh] bg-form-bg flex flex-col justify-center items-center overflow-y-auto">
+        <div className="w-full max-w-[480px] px-8 py-8 flex flex-col gap-6">
           {/* Móvil */}
           <div className="lg:hidden flex items-center gap-2 mb-4">
             <MdFestival className="text-3xl text-lemon-icing" />
