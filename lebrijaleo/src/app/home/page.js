@@ -142,7 +142,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="mt-auto bg-nimbus-cloud rounded-2xl p-6 relative overflow-hidden text-midnight-blue border border-nimbus-cloud/50 hidden lg:flex flex-col gap-4 ">
+      <div className="mt-auto bg-nimbus-cloud rounded-2xl p-6 relative overflow-hidden text-midnight-blue border border-nimbus-cloud/50 hidden lg:flex flex-col gap-4 shrink-0">
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/50 rounded-full blur-2xl"></div>
         <div className="relative z-10 flex flex-col gap-4">
           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-midnight-blue mb-1 shadow-sm">
@@ -162,7 +162,7 @@ export default function HomePage() {
   );
 
   return (
-    <div className="bg-cloud-dancer text-midnight-blue font-display antialiased overflow-hidden h-screen flex">
+    <div className="bg-cloud-dancer text-midnight-blue font-display antialiased overflow-hidden min-h-screen h-dvh flex items-stretch">
       
       <Sidebar />
 
@@ -294,7 +294,7 @@ export default function HomePage() {
       </main>
 
       {/* ASIDE DERECHO (Escritorio) */}
-      <aside className="w-80 bg-white border-l border-nimbus-cloud/30 p-6 flex flex-col gap-6 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto hidden xl:flex shrink-0 z-10">
+      <aside className="w-80 bg-white border-l border-nimbus-cloud/30 p-6 gap-6 self-stretch h-dvh shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto hidden xl:flex xl:flex-col shrink-0 z-10">
         {filtersContentJSX}
       </aside>
 
