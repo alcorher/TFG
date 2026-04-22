@@ -50,23 +50,23 @@ export default function Navbar() {
       
       {/* Navegación Principal */}
       <nav className="flex-1 flex flex-col gap-6 w-full px-2">
-        <button className="group relative w-full aspect-square rounded-xl flex items-center justify-center text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/30 transition-all">
+        <Link href="/home" className="group relative w-full aspect-square rounded-xl flex items-center justify-center text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/30 transition-all">
           <MdDashboard className="text-3xl" />
           <span className="absolute left-16 bg-midnight-blue text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Cartelera</span>
-        </button>
+        </Link>
         
         <Link href="/favorites" className="group relative w-full aspect-square rounded-xl flex items-center justify-center text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/30 transition-all">
           <MdFavorite className="text-3xl" />
           <span className="absolute left-16 bg-midnight-blue text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Favoritos</span>
         </Link>
-        <button className="group relative w-full aspect-square rounded-xl flex items-center justify-center text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/30 transition-all">
+        <Link href="/myOrganizers" className="group relative w-full aspect-square rounded-xl flex items-center justify-center text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/30 transition-all">
           <MdGroups className="text-3xl" />
           <span className="absolute left-16 bg-midnight-blue text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Organizadores</span>
-        </button>
-        <button className="group relative w-full aspect-square rounded-xl flex items-center justify-center text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/30 transition-all">
+        </Link>
+        <Link href="/createEvent" className="group relative w-full aspect-square rounded-xl flex items-center justify-center text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/30 transition-all">
           <MdAddCircle className="text-3xl" />
           <span className="absolute left-16 bg-midnight-blue text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Publicar</span>
-        </button>
+        </Link>
         <Link href="/myEvents" className="group relative w-full aspect-square rounded-xl flex items-center justify-center text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/30 transition-all">
           <MdCalendarMonth className="text-3xl" />
           <span className="absolute left-16 bg-midnight-blue text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Mis Eventos</span>
