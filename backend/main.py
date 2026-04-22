@@ -502,3 +502,158 @@ async def toggle_favorito(evento_id: str, authorization: str = Header(None)):
     except Exception as e:
         print(f"Error al alternar favorito: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/empresarios")
+def obtener_empresarios(current_user = Depends(get_current_user)):
+    """Obtiene los empresarios creados por el administrador autenticado"""
+    try:
+        # 1. Verificar que el usuario es Administrador
+        admin_check = supabase.table("usuarios").select("rol").eq("id_usuario", current_user.id).single().execute()
+        if not admin_check.data or admin_check.data.get("rol") != "Administrador":
+            raise HTTPException(status_code=403, detail="Acceso restringido a administradores")
+
+        # 2. Obtener solo los empresarios que este admin ha creado
+        response = supabase.table("usuarios").select(
+            "id_usuario, nombre, email, avatar_url, banner_url, username, biografia, ubicacion"
+        ).eq("rol", "Empresario").eq("creado_por", current_user.id).order("nombre").execute()
+
+        empresarios = []
+        for emp in response.data:
+            # Contar eventos publicados por cada empresario
+            try:
+                ev_response = supabase.table("eventos").select(
+                    "id_evento", count="exact"
+                ).eq("id_empresario", emp["id_usuario"]).execute()
+                num_eventos = ev_response.count if ev_response.count is not None else 0
+            except Exception:
+                num_eventos = 0
+
+            empresarios.append({
+                **emp,
+                "num_eventos": num_eventos
+            })
+
+        return {"mensaje": "Empresarios recuperados con éxito", "data": empresarios}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al obtener los empresarios: {str(e)}")
+
+@app.delete("/api/empresarios/{user_id}")
+def eliminar_empresario(user_id: str, current_user = Depends(get_current_user)):
+    """Revoca el rol de un empresario (pasa a Cliente). Solo el admin que lo creó puede hacerlo."""
+    try:
+        # 1. Verificar que es Administrador
+        admin_check = supabase.table("usuarios").select("rol").eq("id_usuario", current_user.id).single().execute()
+        if not admin_check.data or admin_check.data.get("rol") != "Administrador":
+            raise HTTPException(status_code=403, detail="Solo los administradores pueden realizar esta acción")
+
+        # 2. Verificar que el empresario fue creado por este admin
+        emp_check = supabase.table("usuarios").select("creado_por").eq("id_usuario", user_id).single().execute()
+        if not emp_check.data or emp_check.data.get("creado_por") != current_user.id:
+            raise HTTPException(status_code=403, detail="Solo puedes gestionar los empresarios que tú creaste")
+
+        # 3. Cancelar todos sus eventos activos
+        supabase.table("eventos").update({"estado": "Cancelado"}).eq("id_empresario", user_id).eq("estado", "Activo").execute()
+
+        # 4. Degradar rol a Cliente
+        response = supabase.table("usuarios").update({"rol": "Cliente", "creado_por": None}).eq("id_usuario", user_id).execute()
+        return {"mensaje": "Rol revocado con éxito. Sus eventos han sido cancelados.", "data": response.data}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al revocar el rol: {str(e)}")
+
+# --- ENDPOINTS DE ADMINISTRACIÓN DE ROLES ---
+
+@app.put("/api/admin/asignar-rol/{user_id}")
+def asignar_rol_empresario(user_id: str, current_user = Depends(get_current_user)):
+    """Permite a un Administrador asignar el rol 'Empresario' a un usuario Cliente"""
+    try:
+        # 1. Verificar que el usuario autenticado es Administrador
+        admin_check = supabase.table("usuarios").select("rol").eq("id_usuario", current_user.id).single().execute()
+        if not admin_check.data or admin_check.data.get("rol") != "Administrador":
+            raise HTTPException(status_code=403, detail="Solo los administradores pueden asignar roles")
+
+        # 2. Verificar que el usuario objetivo existe y es Cliente
+        target_check = supabase.table("usuarios").select("rol, nombre").eq("id_usuario", user_id).single().execute()
+        if not target_check.data:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        if target_check.data.get("rol") != "Cliente":
+            raise HTTPException(status_code=400, detail=f"Este usuario ya tiene el rol '{target_check.data.get('rol')}'")
+
+        # 3. Asignar rol Empresario y registrar quién lo creó
+        response = supabase.table("usuarios").update({
+            "rol": "Empresario",
+            "creado_por": current_user.id
+        }).eq("id_usuario", user_id).execute()
+
+        return {
+            "mensaje": f"{target_check.data.get('nombre')} ahora es Empresario",
+            "data": response.data
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al asignar rol: {str(e)}")
+
+# --- ENDPOINTS DE AMIGOS ---
+
+@app.post("/api/amigos/{user_id}")
+def toggle_amigo(user_id: str, current_user = Depends(get_current_user)):
+    """Añade o elimina a un usuario como amigo (toggle)"""
+    try:
+        # No puedes añadirte a ti mismo
+        if str(current_user.id) == user_id:
+            raise HTTPException(status_code=400, detail="No puedes añadirte a ti mismo como amigo")
+
+        # Comprobar si ya es amigo
+        existing = supabase.table("amigos").select("id").eq("id_usuario", current_user.id).eq("id_amigo", user_id).execute()
+
+        if existing.data and len(existing.data) > 0:
+            # Eliminar amistad
+            supabase.table("amigos").delete().eq("id_usuario", current_user.id).eq("id_amigo", user_id).execute()
+            es_amigo = False
+        else:
+            # Añadir amistad
+            supabase.table("amigos").insert({
+                "id_usuario": str(current_user.id),
+                "id_amigo": user_id
+            }).execute()
+            es_amigo = True
+
+        # Obtener nuevo conteo de amigos del usuario objetivo (cuánta gente lo sigue)
+        count_response = supabase.table("amigos").select("*", count="exact").eq("id_amigo", user_id).execute()
+        conteo = count_response.count if count_response.count is not None else 0
+
+        return {"es_amigo": es_amigo, "conteo_amigos": conteo}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al gestionar amistad: {str(e)}")
+
+@app.get("/api/amigos/{user_id}/estado")
+def obtener_estado_amigo(user_id: str, authorization: str = Header(None)):
+    """Consulta si el usuario autenticado sigue a otro y el conteo de amigos"""
+    try:
+        es_amigo = False
+
+        if authorization and authorization.startswith("Bearer "):
+            token = authorization.split(" ")[1]
+            try:
+                user_response = supabase.auth.get_user(token)
+                current_id = user_response.user.id
+
+                existing = supabase.table("amigos").select("id").eq("id_usuario", current_id).eq("id_amigo", user_id).execute()
+                es_amigo = len(existing.data) > 0 if existing.data else False
+            except Exception:
+                pass
+
+        # Conteo de seguidores (cuánta gente sigue a este user)
+        count_response = supabase.table("amigos").select("*", count="exact").eq("id_amigo", user_id).execute()
+        conteo = count_response.count if count_response.count is not None else 0
+
+        return {"es_amigo": es_amigo, "conteo_amigos": conteo}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al obtener estado de amistad: {str(e)}")

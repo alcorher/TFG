@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"; // Importamos el router para rediri
 import { createClient } from "@/utils/supabase/client"; // Importamos tu cliente de Supabase
 import {
   MdOutlinePerson,
+  MdAlternateEmail,
   MdOutlineMail,
   MdOutlineLock,
   MdOutlineVisibility,
@@ -24,6 +25,7 @@ export default function RegisterForm() {
 
   const [formData, setFormData] = useState({
     name: "",
+    username: "",
     email: "",
     password: "",
   });
@@ -46,6 +48,7 @@ export default function RegisterForm() {
       options: {
         data: {
           nombre: formData.name, // Pasamos el nombre para el Trigger de la BD que lo guardará en la tabla de usuarios
+          username: formData.username, // Username obligatorio para la tabla de usuarios
         },
       },
     });
@@ -69,7 +72,7 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex flex-col hw-full">
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         {/* Mostrar Mensajes de Error o Éxito */}
         {errorMessage && (
@@ -103,6 +106,32 @@ export default function RegisterForm() {
               value={formData.name}
               onChange={handleChange}
               placeholder="Ej. María García"
+              className="w-full pl-11 pr-4 py-3.5 bg-white border border-nimbus-cloud rounded-xl text-midnight-blue placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-lemon-icing/50 focus:border-lemon-icing transition-all font-medium disabled:opacity-50"
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+
+        {/* Input Username */}
+        <div className="flex flex-col gap-1.5">
+          <label
+            className="text-sm font-semibold text-midnight-blue"
+            htmlFor="username"
+          >
+            Nombre de usuario
+          </label>
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-nimbus-cloud transition-colors">
+              <MdAlternateEmail className="text-xl" />
+            </div>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              required
+              value={formData.username}
+              onChange={handleChange}
+              placeholder="Ej. maria_garcia"
               className="w-full pl-11 pr-4 py-3.5 bg-white border border-nimbus-cloud rounded-xl text-midnight-blue placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-lemon-icing/50 focus:border-lemon-icing transition-all font-medium disabled:opacity-50"
               disabled={isLoading}
             />

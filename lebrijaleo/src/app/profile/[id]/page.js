@@ -6,9 +6,10 @@ import Sidebar from '@/components/layout/Navbar';
 import EventCard from '@/components/events/EventCard';
 import { createClient } from '@/utils/supabase/client';
 import { 
-  MdArrowBack, MdGroup, 
+  MdArrowBack, MdGroup, MdMenu, MdClose,
   MdBookmark, MdGridView, MdViewList, 
-  MdEventNote, MdInfoOutline, MdLocationOn
+  MdEventNote, MdInfoOutline, MdLocationOn,
+  MdPersonAdd, MdPersonRemove, MdAdminPanelSettings
 } from "react-icons/md";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -25,11 +26,25 @@ export default function PublicProfilePage() {
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
 
+  // Friend system state
+  const [esAmigo, setEsAmigo] = useState(false);
+  const [conteoAmigos, setConteoAmigos] = useState(0);
+  const [friendLoading, setFriendLoading] = useState(false);
+
+  // Admin state
+  const [currentUserRol, setCurrentUserRol] = useState(null);
+  const [rolLoading, setRolLoading] = useState(false);
+  const [rolMessage, setRolMessage] = useState('');
+
+  // Mobile panel
+  const [showMobilePanel, setShowMobilePanel] = useState(false);
+
   useEffect(() => {
     async function loadPublicProfile() {
       try {
-        // Check if this is the current user's own profile
         const { data: { session } } = await supabase.auth.getSession();
+        
+        // Check if this is the current user's own profile
         if (session && session.user.id === id) {
           router.replace('/profile');
           return;
@@ -47,6 +62,30 @@ export default function PublicProfilePage() {
         setEventos(data.eventos || []);
         setFavoritos(data.favoritos || []);
 
+        // Fetch friend status
+        const headers = {};
+        if (session) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        const friendRes = await fetch(`${API_URL}/api/amigos/${id}/estado`, { headers });
+        if (friendRes.ok) {
+          const friendData = await friendRes.json();
+          setEsAmigo(friendData.es_amigo);
+          setConteoAmigos(friendData.conteo_amigos);
+        }
+
+        // If logged in, get current user's role for admin features
+        if (session) {
+          const profileRes = await fetch(`${API_URL}/api/perfil`, {
+            headers: { 'Authorization': `Bearer ${session.access_token}` }
+          });
+          if (profileRes.ok) {
+            const myProfile = await profileRes.json();
+            setCurrentUserRol(myProfile.rol);
+          }
+        }
+
       } catch (err) {
         console.error("Error cargando perfil público:", err);
         setError("No hemos podido encontrar este perfil.");
@@ -59,6 +98,62 @@ export default function PublicProfilePage() {
       loadPublicProfile();
     }
   }, [id, router, supabase]);
+
+  // Toggle friend
+  const handleToggleFriend = async () => {
+    setFriendLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/login');
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/api/amigos/${id}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setEsAmigo(data.es_amigo);
+        setConteoAmigos(data.conteo_amigos);
+      }
+    } catch (err) {
+      console.error("Error toggling friend:", err);
+    } finally {
+      setFriendLoading(false);
+    }
+  };
+
+  // Assign Organizador role
+  const handleAsignarRol = async () => {
+    setRolLoading(true);
+    setRolMessage('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch(`${API_URL}/api/admin/asignar-rol/${id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setRolMessage(data.mensaje || 'Rol asignado con éxito');
+        // Update the profile data locally
+        setProfileData(prev => ({ ...prev, rol: 'Empresario' }));
+      } else {
+        setRolMessage(data.detail || 'Error al asignar rol');
+      }
+    } catch (err) {
+      setRolMessage('Error de conexión');
+    } finally {
+      setRolLoading(false);
+    }
+  };
 
   // --- Loading ---
   if (isLoading) {
@@ -89,6 +184,82 @@ export default function PublicProfilePage() {
   const defaultAvatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(profileData.nombre || 'U') + "&background=F6EBC8&color=1e293b";
   const defaultBanner = "https://images.unsplash.com/photo-1518605368461-1ee46062f6b8?q=80&w=2093";
   const isOrganizer = profileData.rol === 'Empresario';
+  const isAdmin = currentUserRol === 'Administrador';
+  const canMakeEmpresario = isAdmin && profileData.rol === 'Cliente';
+
+  // Sidebar content (reused for desktop aside and mobile drawer)
+  const SidebarContent = () => (
+    <div className="bg-white rounded-2xl flex flex-col gap-3">
+      <h3 className="text-midnight-blue font-bold text-lg">Acciones</h3>
+      
+      {/* Add/Remove Friend Button */}
+      <button
+        onClick={handleToggleFriend}
+        disabled={friendLoading}
+        className={`w-full py-3 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 ${
+          esAmigo
+            ? 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-100'
+            : 'bg-lemon-icing hover:brightness-95 text-midnight-blue'
+        }`}
+      >
+        {friendLoading ? (
+          <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+        ) : esAmigo ? (
+          <>
+            <MdPersonRemove className="text-xl" />
+            <span>Eliminar Amigo</span>
+          </>
+        ) : (
+          <>
+            <MdPersonAdd className="text-xl" />
+            <span>Añadir Amigo</span>
+          </>
+        )}
+      </button>
+
+      {/* Make Organizador Button (Admin only, target must be Cliente) */}
+      {canMakeEmpresario && (
+        <button
+          onClick={handleAsignarRol}
+          disabled={rolLoading}
+          className="w-full py-3 bg-lemon-icing hover:brightness-95 text-black font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-60"
+        >
+          {rolLoading ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <>
+              <MdAdminPanelSettings className="text-xl" />
+              <span>Hacer Organizador</span>
+            </>
+          )}
+        </button>
+      )}
+
+      {/* Role assignment feedback message */}
+      {rolMessage && (
+        <div className={`text-sm font-medium p-3 rounded-xl text-center ${
+          rolMessage.includes('Error') || rolMessage.includes('error')
+            ? 'bg-red-50 text-red-600 border border-red-100'
+            : 'bg-green-50 text-green-700 border border-green-100'
+        }`}>
+          {rolMessage}
+        </div>
+      )}
+
+      {/* Friend count info card */}
+      <div className="mt-2 bg-cloud-dancer/60 rounded-xl p-4 border border-nimbus-cloud/30">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+            <MdGroup className="text-xl" />
+          </div>
+          <div>
+            <p className="text-xs text-midnight-blue/50 font-medium">Amigos</p>
+            <p className="text-lg font-bold text-midnight-blue">{conteoAmigos}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="bg-cloud-dancer text-midnight-blue font-display antialiased overflow-hidden h-screen flex">
@@ -106,6 +277,14 @@ export default function PublicProfilePage() {
             <h2 className="text-lg font-bold text-midnight-blue">
               {isOrganizer ? 'Perfil de Organizador' : 'Perfil de Usuario'}
             </h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setShowMobilePanel(true)}
+              className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors xl:hidden"
+            >
+              <MdMenu className="text-xl" />
+            </button>
           </div>
         </header>
 
@@ -149,7 +328,7 @@ export default function PublicProfilePage() {
 
           <div className="max-w-7xl mx-auto px-8 py-8">
             {/* Tarjetas de Estadísticas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
               {isOrganizer ? (
                 <div className="bg-white rounded-2xl p-5 border border-nimbus-cloud/30 shadow-sm flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
@@ -171,6 +350,18 @@ export default function PublicProfilePage() {
                   </div>
                 </div>
               )}
+              
+              {/* Friend count stat card */}
+              <div className="bg-white rounded-2xl p-5 border border-nimbus-cloud/30 shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                  <MdGroup className="text-2xl" />
+                </div>
+                <div>
+                  <p className="text-sm text-midnight-blue/60 font-medium">Amigos</p>
+                  <p className="text-2xl font-bold text-midnight-blue">{conteoAmigos}</p>
+                </div>
+              </div>
+
               {profileData.ubicacion && (
                 <div className="bg-white rounded-2xl p-5 border border-nimbus-cloud/30 shadow-sm flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -260,6 +451,41 @@ export default function PublicProfilePage() {
           </div>
         </div>
       </main>
+
+      {/* ASIDE DERECHO (Acciones) — Desktop */}
+      <aside className="w-80 bg-white border-l border-nimbus-cloud/40 p-6 flex flex-col gap-8 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto hidden xl:flex shrink-0">
+        <SidebarContent />
+      </aside>
+
+      {/* PANEL MÓVIL — Overlay + Drawer */}
+      <div 
+        className={`fixed inset-0 z-50 xl:hidden transition-opacity duration-300 ${
+          showMobilePanel ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
+          onClick={() => setShowMobilePanel(false)} 
+        />
+        {/* Drawer */}
+        <aside 
+          className={`absolute top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl p-6 flex flex-col gap-8 overflow-y-auto transition-transform duration-300 ease-out ${
+            showMobilePanel ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="text-midnight-blue font-bold text-lg">Acciones</h3>
+            <button 
+              onClick={() => setShowMobilePanel(false)}
+              className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors"
+            >
+              <MdClose className="text-xl" />
+            </button>
+          </div>
+          <SidebarContent />
+        </aside>
+      </div>
     </div>
   );
 }
