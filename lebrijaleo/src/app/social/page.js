@@ -12,6 +12,109 @@ import {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+function FriendCard({ friend, viewMode, togglingId, onToggleFriend, onOpenProfile, formatDate, getAvatar }) {
+  if (viewMode === 'list') {
+    return (
+      <div className="flex items-center gap-4 px-6 py-4 hover:bg-cloud-dancer/40 transition-colors group">
+        <img
+          alt={friend.nombre}
+          className="w-14 h-14 rounded-full object-cover border-2 border-cloud-dancer shadow-sm cursor-pointer group-hover:scale-105 transition-transform"
+          src={getAvatar(friend)}
+          onClick={() => onOpenProfile(friend.id_usuario)}
+        />
+        <div className="flex-1 min-w-0">
+          <p
+            className="text-sm font-bold text-midnight-blue truncate cursor-pointer hover:underline"
+            onClick={() => onOpenProfile(friend.id_usuario)}
+          >
+            {friend.nombre}
+          </p>
+          <p className="text-xs text-midnight-blue/50 font-medium truncate">
+            {friend.username ? `@${friend.username} • ` : ''}
+            {formatDate(friend.amigo_desde)}
+            {friend.rol === 'Empresario' && <span className="ml-2 px-1.5 py-0.5 bg-lemon-icing/70 text-midnight-blue text-[10px] font-bold rounded-full border border-lemon-icing">Organizador</span>}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => onToggleFriend(friend.id_usuario)}
+            disabled={togglingId === friend.id_usuario}
+            className="h-8 px-3 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold border border-red-100 transition-colors disabled:opacity-50 flex items-center gap-1"
+          >
+            {togglingId === friend.id_usuario ? (
+              <div className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <><MdPersonRemove className="text-sm" /> Quitar</>
+            )}
+          </button>
+          <button
+            onClick={() => onOpenProfile(friend.id_usuario)}
+            className="h-8 px-3 rounded-lg bg-lemon-icing text-midnight-blue text-xs font-bold border border-lemon-icing/80 hover:bg-lemon-icing/80 transition-colors"
+          >
+            Ver perfil
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <article className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-nimbus-cloud/40 flex flex-col items-center text-center relative group hover:border-lemon-icing">
+      <div
+        className="w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-cloud-dancer shadow-sm group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+        onClick={() => onOpenProfile(friend.id_usuario)}
+      >
+        <img alt={friend.nombre} className="w-full h-full object-cover" src={getAvatar(friend)} />
+      </div>
+
+      <h3
+        className="font-bold text-lg text-midnight-blue cursor-pointer hover:underline"
+        onClick={() => onOpenProfile(friend.id_usuario)}
+      >
+        {friend.nombre}
+      </h3>
+      <p className="text-xs font-bold text-midnight-blue/50 mb-1">
+        {friend.username ? `@${friend.username}` : ''}
+      </p>
+
+      <div className="min-h-5 mb-2 flex items-center justify-center">
+        {friend.rol === 'Empresario' ? (
+          <span className="inline-block px-2 py-0.5 bg-lemon-icing/70 text-midnight-blue text-[10px] font-bold rounded-full border border-lemon-icing">Organizador</span>
+        ) : (
+          <span className="invisible inline-block px-2 py-0.5 text-[10px] font-bold rounded-full">Organizador</span>
+        )}
+      </div>
+
+      <div className="bg-cloud-dancer rounded-xl p-3 w-full mb-6">
+        <div className="flex items-center gap-2 justify-center text-xs font-bold text-midnight-blue/50">
+          <MdGroup className="text-base" />
+          <span>Amigos {formatDate(friend.amigo_desde)}</span>
+        </div>
+      </div>
+
+      <div className="mt-auto grid grid-cols-2 gap-3 w-full">
+        <button
+          onClick={() => onToggleFriend(friend.id_usuario)}
+          disabled={togglingId === friend.id_usuario}
+          className="h-10 px-4 rounded-xl border border-red-100 bg-red-50 text-red-600 text-sm font-bold hover:bg-red-100 transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-1.5"
+        >
+          {togglingId === friend.id_usuario ? (
+            <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <><MdPersonRemove className="text-lg" /> Quitar</>
+          )}
+        </button>
+        <button
+          onClick={() => onOpenProfile(friend.id_usuario)}
+          className="h-10 px-4 rounded-xl bg-lemon-icing text-midnight-blue text-sm font-bold border border-lemon-icing/80 hover:bg-lemon-icing/85 transition-colors shadow-sm"
+        >
+          Ver perfil
+        </button>
+      </div>
+    </article>
+  );
+}
+
 export default function MisAmigosPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -206,7 +309,7 @@ export default function MisAmigosPage() {
           <div className="max-w-7xl mx-auto">
             
             {/* Search Banner */}
-            <div className="mb-8 bg-gradient-to-r from-midnight-blue to-slate-800 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
+            <div className="mb-8 bg-linear-to-r from-midnight-blue to-slate-800 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-lemon-icing/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
               <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex-1">
@@ -285,13 +388,13 @@ export default function MisAmigosPage() {
                           </p>
                           <p className="text-xs text-midnight-blue/50 font-medium truncate">
                             {user.username ? `@${user.username}` : ''} 
-                            {user.rol === 'Empresario' && <span className="ml-1 px-1.5 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-full">Organizador</span>}
+                            {user.rol === 'Empresario' && <span className="ml-1 px-1.5 py-0.5 bg-lemon-icing/70 text-midnight-blue text-[10px] font-bold rounded-full border border-lemon-icing">Organizador</span>}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <button
                             onClick={() => router.push(`/profile/${user.id_usuario}`)}
-                            className="p-2 text-midnight-blue/30 hover:text-midnight-blue hover:bg-white rounded-lg transition-colors"
+                            className="p-2 text-midnight-blue/60 bg-lemon-icing/60 border border-lemon-icing rounded-lg hover:bg-lemon-icing/80 transition-colors"
                             title="Ver perfil"
                           >
                             <MdOpenInNew className="text-lg" />
@@ -370,100 +473,32 @@ export default function MisAmigosPage() {
             ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
                 {filteredAmigos.map((friend) => (
-                  <article key={friend.id_usuario} className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-nimbus-cloud/40 flex flex-col items-center text-center relative group hover:border-lemon-icing">
-                    <div 
-                      className="w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-cloud-dancer shadow-sm group-hover:scale-105 transition-transform duration-300 cursor-pointer"
-                      onClick={() => router.push(`/profile/${friend.id_usuario}`)}
-                    >
-                      <img alt={friend.nombre} className="w-full h-full object-cover" src={getAvatar(friend)}/>
-                    </div>
-                    
-                    <h3 
-                      className="font-bold text-lg text-midnight-blue cursor-pointer hover:underline"
-                      onClick={() => router.push(`/profile/${friend.id_usuario}`)}
-                    >
-                      {friend.nombre}
-                    </h3>
-                    <p className="text-xs font-bold text-midnight-blue/50 mb-1">
-                      {friend.username ? `@${friend.username}` : ''}
-                    </p>
-                    {friend.rol === 'Empresario' && (
-                      <span className="inline-block px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-full mb-2">Organizador</span>
-                    )}
-                    
-                    <div className="bg-cloud-dancer rounded-xl p-3 w-full mb-6">
-                      <div className="flex items-center gap-2 justify-center text-xs font-bold text-midnight-blue/50">
-                        <MdGroup className="text-base" />
-                        <span>Amigos {formatDate(friend.amigo_desde)}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-auto grid grid-cols-2 gap-3 w-full">
-                      <button
-                        onClick={() => handleToggleFriend(friend.id_usuario)}
-                        disabled={togglingId === friend.id_usuario}
-                        className="px-4 py-2 rounded-xl border border-red-100 bg-red-50 text-red-600 text-sm font-bold hover:bg-red-100 transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-1.5"
-                      >
-                        {togglingId === friend.id_usuario ? (
-                          <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <><MdPersonRemove className="text-lg" /> Quitar</>
-                        )}
-                      </button>
-                      <button 
-                        onClick={() => router.push(`/profile/${friend.id_usuario}`)}
-                        className="px-4 py-2 rounded-xl bg-midnight-blue text-white text-sm font-bold hover:bg-black transition-colors shadow-lg shadow-midnight-blue/10"
-                      >
-                        Ver perfil
-                      </button>
-                    </div>
-                  </article>
+                  <FriendCard
+                    key={friend.id_usuario}
+                    friend={friend}
+                    viewMode="grid"
+                    togglingId={togglingId}
+                    onToggleFriend={handleToggleFriend}
+                    onOpenProfile={(id) => router.push(`/profile/${id}`)}
+                    formatDate={formatDate}
+                    getAvatar={getAvatar}
+                  />
                 ))}
               </div>
             ) : (
               /* List View */
               <div className="bg-white rounded-2xl border border-nimbus-cloud/40 shadow-sm overflow-hidden divide-y divide-nimbus-cloud/20 mb-20">
                 {filteredAmigos.map((friend) => (
-                  <div key={friend.id_usuario} className="flex items-center gap-4 px-6 py-4 hover:bg-cloud-dancer/40 transition-colors group">
-                    <img 
-                      alt={friend.nombre} 
-                      className="w-14 h-14 rounded-full object-cover border-2 border-cloud-dancer shadow-sm cursor-pointer group-hover:scale-105 transition-transform"
-                      src={getAvatar(friend)}
-                      onClick={() => router.push(`/profile/${friend.id_usuario}`)}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p 
-                        className="text-sm font-bold text-midnight-blue truncate cursor-pointer hover:underline"
-                        onClick={() => router.push(`/profile/${friend.id_usuario}`)}
-                      >
-                        {friend.nombre}
-                      </p>
-                      <p className="text-xs text-midnight-blue/50 font-medium truncate">
-                        {friend.username ? `@${friend.username} • ` : ''}
-                        {formatDate(friend.amigo_desde)}
-                        {friend.rol === 'Empresario' && <span className="ml-2 px-1.5 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-full">Organizador</span>}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => handleToggleFriend(friend.id_usuario)}
-                        disabled={togglingId === friend.id_usuario}
-                        className="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold border border-red-100 transition-colors disabled:opacity-50 flex items-center gap-1"
-                      >
-                        {togglingId === friend.id_usuario ? (
-                          <div className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <><MdPersonRemove className="text-sm" /> Quitar</>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => router.push(`/profile/${friend.id_usuario}`)}
-                        className="px-3 py-1.5 rounded-lg bg-midnight-blue text-white text-xs font-bold hover:bg-black transition-colors"
-                      >
-                        Ver perfil
-                      </button>
-                    </div>
-                  </div>
+                  <FriendCard
+                    key={friend.id_usuario}
+                    friend={friend}
+                    viewMode="list"
+                    togglingId={togglingId}
+                    onToggleFriend={handleToggleFriend}
+                    onOpenProfile={(id) => router.push(`/profile/${id}`)}
+                    formatDate={formatDate}
+                    getAvatar={getAvatar}
+                  />
                 ))}
               </div>
             )}
