@@ -598,6 +598,77 @@ def asignar_rol_empresario(user_id: str, current_user = Depends(get_current_user
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error al asignar rol: {str(e)}")
 
+# --- ENDPOINT DE ESTADÍSTICAS DE ORGANIZADOR ---
+
+@app.get("/api/estadisticas-organizador/{user_id}")
+def obtener_estadisticas_organizador(user_id: str, current_user = Depends(get_current_user)):
+    """Obtiene estadísticas de un organizador: likes totales, seguidores, evento top.
+    Solo accesible por el propio organizador o un Administrador que lo creó."""
+    try:
+        # 1. Verificar que el usuario objetivo es Empresario
+        target = supabase.table("usuarios").select(
+            "id_usuario, nombre, username, rol, creado_por"
+        ).eq("id_usuario", user_id).single().execute()
+
+        if not target.data:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        if target.data.get("rol") != "Empresario":
+            raise HTTPException(status_code=400, detail="Este usuario no es un organizador")
+
+        # 2. Verificar permisos: solo el propio organizador o su admin creador
+        es_propio = str(current_user.id) == user_id
+        es_admin_creador = False
+
+        if not es_propio:
+            admin_check = supabase.table("usuarios").select("rol").eq("id_usuario", current_user.id).single().execute()
+            if admin_check.data and admin_check.data.get("rol") == "Administrador":
+                if target.data.get("creado_por") == str(current_user.id):
+                    es_admin_creador = True
+
+        if not es_propio and not es_admin_creador:
+            raise HTTPException(status_code=403, detail="No tienes permisos para ver estas estadísticas")
+
+        # 3. Obtener eventos con likes
+        ev_response = supabase.table("eventos").select(
+            "id_evento, nombre, favoritos(count)"
+        ).eq("id_empresario", user_id).execute()
+
+        eventos_con_likes = []
+        likes_totales = 0
+        for e in ev_response.data:
+            count = 0
+            if "favoritos" in e and e["favoritos"]:
+                fav_data = e["favoritos"]
+                if isinstance(fav_data, list) and len(fav_data) > 0:
+                    count = fav_data[0].get("count", 0)
+                elif isinstance(fav_data, dict):
+                    count = fav_data.get("count", 0)
+            likes_totales += count
+            eventos_con_likes.append({"nombre": e["nombre"], "likes": count})
+
+        # 4. Evento con más likes
+        evento_top = None
+        if eventos_con_likes:
+            evento_top = max(eventos_con_likes, key=lambda x: x["likes"])
+
+        # 5. Seguidores totales
+        count_response = supabase.table("amigos").select("*", count="exact").eq("id_amigo", user_id).execute()
+        seguidores = count_response.count if count_response.count is not None else 0
+
+        return {
+            "nombre": target.data.get("nombre"),
+            "username": target.data.get("username"),
+            "num_eventos": len(ev_response.data),
+            "likes_totales": likes_totales,
+            "seguidores_totales": seguidores,
+            "evento_top": evento_top,
+            "eventos": eventos_con_likes
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al obtener estadísticas: {str(e)}")
+
 # --- ENDPOINTS DE AMIGOS ---
 
 @app.post("/api/amigos/{user_id}")
@@ -657,58 +728,3 @@ def obtener_estado_amigo(user_id: str, authorization: str = Header(None)):
         return {"es_amigo": es_amigo, "conteo_amigos": conteo}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error al obtener estado de amistad: {str(e)}")
-
-@app.get("/api/mis-amigos")
-def obtener_mis_amigos(current_user = Depends(get_current_user)):
-    """Obtiene la lista de amigos (usuarios que sigo) del usuario autenticado"""
-    try:
-        # 1. Obtener los IDs de amigos
-        amigos_response = supabase.table("amigos").select("id_amigo, created_at").eq("id_usuario", current_user.id).order("created_at", desc=True).execute()
-
-        if not amigos_response.data:
-            return {"mensaje": "No tienes amigos aún", "data": []}
-
-        amigo_ids = [a["id_amigo"] for a in amigos_response.data]
-
-        # 2. Obtener los perfiles de esos usuarios
-        perfiles_response = supabase.table("usuarios").select(
-            "id_usuario, nombre, username, avatar_url, rol, ubicacion"
-        ).in_("id_usuario", amigo_ids).execute()
-
-        # 3. Crear mapa de fecha de amistad
-        fecha_map = {a["id_amigo"]: a["created_at"] for a in amigos_response.data}
-
-        # 4. Combinar datos
-        amigos = []
-        for perfil in perfiles_response.data:
-            perfil["amigo_desde"] = fecha_map.get(perfil["id_usuario"])
-            amigos.append(perfil)
-
-        return {"mensaje": "Amigos recuperados con éxito", "data": amigos}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error al obtener amigos: {str(e)}")
-
-@app.get("/api/usuarios/buscar")
-def buscar_usuarios(q: str = "", current_user = Depends(get_current_user)):
-    """Busca usuarios por nombre o username"""
-    try:
-        if not q or len(q) < 2:
-            return {"data": []}
-
-        # Buscar por nombre o username (ilike = case insensitive)
-        response = supabase.table("usuarios").select(
-            "id_usuario, nombre, username, avatar_url, rol, ubicacion"
-        ).or_(f"nombre.ilike.%{q}%,username.ilike.%{q}%").neq("id_usuario", current_user.id).limit(20).execute()
-
-        # Para cada resultado, comprobar si ya es amigo
-        resultados = []
-        for user in response.data:
-            # Check friendship
-            friend_check = supabase.table("amigos").select("id").eq("id_usuario", current_user.id).eq("id_amigo", user["id_usuario"]).execute()
-            user["es_amigo"] = len(friend_check.data) > 0 if friend_check.data else False
-            resultados.append(user)
-
-        return {"data": resultados}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error al buscar usuarios: {str(e)}")
-

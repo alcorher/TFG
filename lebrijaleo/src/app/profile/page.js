@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,8 +9,9 @@ import { createClient } from '@/utils/supabase/client';
 import { 
   MdArrowBack, MdMenu, MdClose, MdGroup, 
   MdBookmark, MdGridView, MdViewList, MdEdit, 
-  MdLogout, MdEventNote
+  MdLogout, MdEventNote, MdDownload
 } from "react-icons/md";
+import { generateStatsTxt, downloadTxt, fetchOrganizerStats } from '@/utils/statsDownload';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -24,6 +26,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
+  const [statsLoading, setStatsLoading] = useState(false);
 
   useEffect(() => {
     async function loadProfileAndData() {
@@ -95,6 +98,23 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
+  };
+
+  const handleDownloadStats = async () => {
+    setStatsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const stats = await fetchOrganizerStats(session.user.id, session.access_token, API_URL);
+      const txt = generateStatsTxt(stats);
+      const safeName = (stats.nombre || 'organizador').replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ ]/g, '').replace(/\s+/g, '_');
+      downloadTxt(txt, `estadisticas_${safeName}.txt`);
+    } catch (err) {
+      console.error('Error descargando estadísticas:', err);
+      alert('No se pudieron descargar las estadísticas.');
+    } finally {
+      setStatsLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -282,13 +302,29 @@ export default function ProfilePage() {
             <span>Editar Perfil</span>
           </button>
           {isOrganizer && (
-            <button 
-              onClick={() => router.push('/createEvent')}
-              className="w-full py-3 bg-white border border-nimbus-cloud/50 hover:bg-cloud-dancer text-midnight-blue/70 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
-            >
-              <MdEventNote className="text-xl" />
-              <span>Crear Evento</span>
-            </button>
+            <>
+              <button 
+                onClick={() => router.push('/createEvent')}
+                className="w-full py-3 bg-white border border-nimbus-cloud/50 hover:bg-cloud-dancer text-midnight-blue/70 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
+              >
+                <MdEventNote className="text-xl" />
+                <span>Crear Evento</span>
+              </button>
+              <button 
+                onClick={handleDownloadStats}
+                disabled={statsLoading}
+                className="w-full py-3 bg-white border border-nimbus-cloud/50 hover:bg-cloud-dancer text-midnight-blue/70 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-60"
+              >
+                {statsLoading ? (
+                  <div className="w-5 h-5 border-2 border-midnight-blue/30 border-t-midnight-blue rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <MdDownload className="text-xl" />
+                    <span>Descargar Estadísticas</span>
+                  </>
+                )}
+              </button>
+            </>
           )}
           <button 
             onClick={handleLogout}
@@ -335,13 +371,29 @@ export default function ProfilePage() {
               <span>Editar Perfil</span>
             </button>
             {isOrganizer && (
-              <button 
-                onClick={() => { setShowMobilePanel(false); router.push('/createEvent'); }}
-                className="w-full py-3 bg-white border border-nimbus-cloud/50 hover:bg-cloud-dancer text-midnight-blue/70 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
-              >
-                <MdEventNote className="text-xl" />
-                <span>Crear Evento</span>
-              </button>
+              <>
+                <button 
+                  onClick={() => { setShowMobilePanel(false); router.push('/createEvent'); }}
+                  className="w-full py-3 bg-white border border-nimbus-cloud/50 hover:bg-cloud-dancer text-midnight-blue/70 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <MdEventNote className="text-xl" />
+                  <span>Crear Evento</span>
+                </button>
+                <button 
+                  onClick={() => { setShowMobilePanel(false); handleDownloadStats(); }}
+                  disabled={statsLoading}
+                  className="w-full py-3 bg-white border border-nimbus-cloud/50 hover:bg-cloud-dancer text-midnight-blue/70 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-60"
+                >
+                  {statsLoading ? (
+                    <div className="w-5 h-5 border-2 border-midnight-blue/30 border-t-midnight-blue rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <MdDownload className="text-xl" />
+                      <span>Descargar Estadísticas</span>
+                    </>
+                  )}
+                </button>
+              </>
             )}
             <button 
               onClick={handleLogout}
