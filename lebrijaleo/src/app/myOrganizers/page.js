@@ -7,7 +7,7 @@ import { createClient } from '@/utils/supabase/client';
 import {
   MdMenu, MdSearch, MdAdd, MdMail, MdEvent,
   MdDelete, MdArrowForward, MdStorefront, MdClose,
-  MdPerson, MdCheckCircle, MdWarning
+  MdPerson, MdCheckCircle, MdWarning, MdLocationOn,
 } from "react-icons/md";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -91,7 +91,7 @@ function EmpresarioCard({ emp, onDelete, onViewProfile }) {
         </div>
         {emp.ubicacion && (
           <div className="flex items-center gap-2.5 text-sm text-midnight-blue/70">
-            <MdPerson className="text-lg text-midnight-blue/35 shrink-0" />
+            <MdLocationOn className="text-lg text-midnight-blue/35 shrink-0" />
             <span className="truncate">{emp.ubicacion}</span>
           </div>
         )}

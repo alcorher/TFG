@@ -246,18 +246,7 @@ export default function PublicProfilePage() {
         </div>
       )}
 
-      {/* Friend count info card */}
-      <div className="mt-2 bg-cloud-dancer/60 rounded-xl p-4 border border-nimbus-cloud/30">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-            <MdGroup className="text-xl" />
-          </div>
-          <div>
-            <p className="text-xs text-midnight-blue/50 font-medium">Amigos</p>
-            <p className="text-lg font-bold text-midnight-blue">{conteoAmigos}</p>
-          </div>
-        </div>
-      </div>
+    
     </div>
   );
 
