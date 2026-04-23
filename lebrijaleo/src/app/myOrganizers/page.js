@@ -1,13 +1,17 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Navbar';
 import { createClient } from '@/utils/supabase/client';
+import JSZip from 'jszip';
+import { generateStatsTxt, fetchOrganizerStats } from '@/utils/statsDownload';
 import {
   MdMenu, MdSearch, MdAdd, MdMail, MdEvent,
   MdDelete, MdArrowForward, MdStorefront, MdClose,
   MdPerson, MdCheckCircle, MdWarning, MdLocationOn,
+  MdDownload,
 } from "react-icons/md";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -91,7 +95,7 @@ function EmpresarioCard({ emp, onDelete, onViewProfile }) {
         </div>
         {emp.ubicacion && (
           <div className="flex items-center gap-2.5 text-sm text-midnight-blue/70">
-            <MdLocationOn className="text-lg text-midnight-blue/35 shrink-0" />
+            <MdPerson className="text-lg text-midnight-blue/35 shrink-0" />
             <span className="truncate">{emp.ubicacion}</span>
           </div>
         )}
@@ -153,6 +157,7 @@ export default function MyOrganizersPage() {
 
   // ── Toast de feedback ──
   const [toast, setToast] = useState(null); // { type: 'success'|'error', msg: string }
+  const [exportLoading, setExportLoading] = useState(false);
 
   const showToast = useCallback((type, msg) => {
     setToast({ type, msg });
@@ -230,6 +235,51 @@ export default function MyOrganizersPage() {
       setEmpToDelete(null);
     }
   }
+
+  // ── Exportar estadísticas de todos como .zip ──
+  const handleExportAll = async () => {
+    setExportLoading(true);
+    try {
+      const zip = new JSZip();
+      const results = await Promise.allSettled(
+        empresarios.map(emp => fetchOrganizerStats(emp.id_usuario, token, API_URL))
+      );
+
+      let count = 0;
+      results.forEach((result, i) => {
+        if (result.status === 'fulfilled') {
+          const stats = result.value;
+          const txt = generateStatsTxt(stats);
+          const safeName = (stats.nombre || `organizador_${i + 1}`).replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ ]/g, '').replace(/\s+/g, '_');
+          zip.file(`estadisticas_${safeName}.txt`, txt);
+          count++;
+        }
+      });
+
+      if (count === 0) {
+        showToast('error', 'No se pudieron obtener estadísticas de ningún organizador.');
+        return;
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const fecha = new Date().toISOString().split('T')[0];
+      a.download = `estadisticas_organizadores_${fecha}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast('success', `Exportadas estadísticas de ${count} organizador${count !== 1 ? 'es' : ''}.`);
+    } catch (err) {
+      console.error('Error exportando estadísticas:', err);
+      showToast('error', 'Error al exportar las estadísticas.');
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   // ── Filtrado por búsqueda ──
   const empresariosFiltrados = empresarios.filter(emp =>
@@ -309,6 +359,20 @@ export default function MyOrganizersPage() {
                   {empresarios.length} organizador{empresarios.length !== 1 ? 'es' : ''} registrado{empresarios.length !== 1 ? 's' : ''} en la plataforma.
                 </p>
               </div>
+              {empresarios.length > 0 && (
+                <button
+                  onClick={handleExportAll}
+                  disabled={exportLoading}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-lemon-icing text-midnight-blue font-bold rounded-xl text-sm hover:brightness-95 transition-all shadow-sm disabled:opacity-60 shrink-0"
+                >
+                  {exportLoading ? (
+                    <div className="w-5 h-5 border-2 border-midnight-blue/30 border-t-midnight-blue rounded-full animate-spin" />
+                  ) : (
+                    <MdDownload className="text-xl" />
+                  )}
+                  <span>{exportLoading ? 'Exportando...' : 'Exportar estadísticas (.zip)'}</span>
+                </button>
+              )}
             </div>
 
             {/* Buscador móvil */}
