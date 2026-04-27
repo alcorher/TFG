@@ -39,7 +39,12 @@ export default function LoginForm() {
     });
 
     if (error) {
-      setErrorMessage("Correo o contraseña incorrectos.");
+      const loginErrorMessages = {
+        "Invalid login credentials": "El correo electrónico o la contraseña no son correctos.",
+        "Email not confirmed": "Debes confirmar tu correo antes de iniciar sesión.",
+      };
+
+      setErrorMessage(loginErrorMessages[error.message] || error.message || "No se ha podido iniciar sesión.");
       setIsLoading(false);
       return;
     }

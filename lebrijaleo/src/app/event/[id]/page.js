@@ -28,6 +28,7 @@ export default function EventDetailPage({ params }) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [currentUser, setCurrentUser] = useState(null);
+  const [deleteMessage, setDeleteMessage] = useState("");
 
   // --- NUEVOS ESTADOS PARA LA CONEXIÓN ---
   const [eventData, setEventData] = useState(null);
@@ -122,6 +123,41 @@ export default function EventDetailPage({ params }) {
       console.error("Error toggling favorite:", err);
     } finally {
       setIsTogglingFav(false);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!eventData) return;
+
+    const confirmed = window.confirm("¿Seguro que quieres eliminar este evento? Esta acción no se puede deshacer.");
+    if (!confirmed) return;
+
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/api/eventos/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        router.push("/myEvents");
+        return;
+      }
+
+      const errorData = await response.json().catch(() => ({}));
+      setDeleteMessage(errorData.detail || "No se ha podido eliminar el evento.");
+    } catch (err) {
+      console.error("Error deleting event:", err);
+      setDeleteMessage("No se ha podido conectar con el servidor para eliminar el evento.");
     }
   };
 
@@ -289,8 +325,14 @@ export default function EventDetailPage({ params }) {
                 <div className="flex items-center gap-2 text-white/90">
                   <MdVerified className="text-xl text-white" />
                   <span className="text-base md:text-lg font-medium">
-                    Organizador Privado
+                    {eventData.organizador_nombre || "Organizador"}
                   </span>
+                </div>
+                <div className="text-white/75 text-sm md:text-base">
+                  {eventData.organizador_username ? `@${eventData.organizador_username}` : null}
+                  {eventData.creador_nombre && eventData.creador_nombre !== eventData.organizador_nombre ? (
+                    <span className="block mt-1">Creado por {eventData.creador_nombre}</span>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -357,6 +399,12 @@ export default function EventDetailPage({ params }) {
             </div>
 
             <div className="grid grid-cols-1 gap-8">
+              {deleteMessage && (
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl px-4 py-3 text-sm font-medium">
+                  {deleteMessage}
+                </div>
+              )}
+
               {/* Sección Descripción */}
               <section className="bg-white rounded-[2rem] p-8 md:p-10 shadow-sm border border-nimbus-cloud/30">
                 <h2 className="text-2xl font-bold text-midnight-blue mb-6 flex items-center gap-2">
@@ -395,8 +443,10 @@ export default function EventDetailPage({ params }) {
       </main>
 
       {/* ASIDE DERECHO (Escritorio) */}
-      <aside className="w-[320px] bg-white border-l border-nimbus-cloud/40 p-6 flex flex-col gap-8 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto hidden xl:flex shrink-0">
-        {rightPanelContentJSX}
+      <aside className="hidden xl:block w-[320px] bg-white border-l border-nimbus-cloud/40 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto shrink-0">
+        <div className="flex h-full flex-col gap-8 p-6">
+          {rightPanelContentJSX}
+        </div>
       </aside>
 
       {/* OVERLAY PARA MÓVIL: Fondo oscuro cuando el panel está abierto */}

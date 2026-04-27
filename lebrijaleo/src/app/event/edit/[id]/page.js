@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Sidebar from '@/components/layout/Navbar';
 import { createClient } from "@/utils/supabase/client";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import {
   MdArrowBack, MdInfoOutline, MdExpandMore, MdLocationOn,
   MdImage, MdDelete, MdLocalActivity, MdLightbulbOutline,
@@ -20,6 +21,7 @@ export default function EditEventPage({ params }) {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
 
@@ -194,14 +196,52 @@ export default function EditEventPage({ params }) {
         alert("¡Evento actualizado con éxito!");
         router.push(`/event/${id}`);
       } else {
-        const errorData = await response.json();
-        alert(`Error al actualizar: ${errorData.detail || "Revisa los campos."}`);
+        const errorData = await response.json().catch(() => ({}));
+        alert(getFriendlyErrorMessage(errorData, "No se ha podido actualizar el evento. Revisa los campos e inténtalo de nuevo."));
       }
     } catch (error) {
       console.error("Error al actualizar:", error);
-      alert("Error de conexión al actualizar el evento.");
+      alert("No se ha podido conectar con el servidor para actualizar el evento.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (isDeleting) return;
+
+    const confirmed = window.confirm("¿Seguro que quieres eliminar este evento? Esta acción no se puede deshacer.");
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        alert("Debes iniciar sesión para eliminar el evento.");
+        return;
+      }
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${API_URL}/api/eventos/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        router.push("/myEvents");
+        return;
+      }
+
+      const errorData = await response.json().catch(() => ({}));
+      alert(getFriendlyErrorMessage(errorData, "No se ha podido eliminar el evento. Revisa tus permisos e inténtalo de nuevo."));
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      alert("No se ha podido conectar con el servidor para eliminar el evento.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -487,7 +527,7 @@ export default function EditEventPage({ params }) {
 
               {/* Botones de Guardar / Cancelar */}
               <div className="flex items-center justify-between gap-4 pt-4 pb-12">
-                <button type="button" disabled={isPastEvent} className="text-sm font-bold text-red-500 hover:text-red-700 hover:underline transition-colors w-full sm:w-auto text-left disabled:opacity-50 disabled:hover:no-underline">
+                <button type="button" onClick={handleDeleteEvent} disabled={isDeleting} className="text-sm font-bold text-red-500 hover:text-red-700 hover:underline transition-colors w-full sm:w-auto text-left disabled:opacity-50 disabled:hover:no-underline">
                   Eliminar evento
                 </button>
                 <div className="flex items-center gap-4">
@@ -505,32 +545,32 @@ export default function EditEventPage({ params }) {
       </main>
 
       {/* ASIDE DERECHO (Ayuda y Estado) */}
-      <aside className="w-80 bg-white border-l border-nimbus-cloud/40 p-6 flex flex-col justify-between gap-6 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto hidden xl:flex shrink-0">
-
-        <div className="bg-white border border-nimbus-cloud/40 rounded-2xl p-6 shadow-sm">
-          <h3 className="text-xs font-bold text-midnight-blue/50 uppercase tracking-wider mb-4">Estado del evento</h3>
-          <div className="flex items-center gap-3 ">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
-            <span className="text-green-600 font-bold text-lg">Publicado</span>
-          </div>
-        </div>
-
-        <div className="bg-nimbus-cloud/40 rounded-2xl p-6 relative overflow-hidden shadow-sm">
-          <div className="flex items-start gap-4 relative z-10">
-            <div className="w-10 h-10 rounded-full bg-midnight-blue text-white flex items-center justify-center shrink-0 shadow-lg shadow-midnight-blue/20">
-              <MdLightbulbOutline className="text-xl" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-midnight-blue mb-2">Consejos rápidos</h4>
-              <ul className="text-sm text-midnight-blue/80 space-y-2 list-disc list-inside marker:text-midnight-blue/50">
-                <li>El cartel debe verse bien en horizontal (16:9).</li>
-                <li>Verifica siempre la hora exacta.</li>
-                <li>Escribe un título corto y llamativo.</li>
-              </ul>
+      <aside className="hidden xl:block w-80 bg-white border-l border-nimbus-cloud/40 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto shrink-0">
+        <div className="flex h-full flex-col justify-between gap-6 p-6">
+          <div className="bg-white border border-nimbus-cloud/40 rounded-2xl p-6 shadow-sm">
+            <h3 className="text-xs font-bold text-midnight-blue/50 uppercase tracking-wider mb-4">Estado del evento</h3>
+            <div className="flex items-center gap-3 ">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
+              <span className="text-green-600 font-bold text-lg">Publicado</span>
             </div>
           </div>
-        </div>
 
+          <div className="bg-nimbus-cloud/40 rounded-2xl p-6 relative overflow-hidden shadow-sm">
+            <div className="flex items-start gap-4 relative z-10">
+              <div className="w-10 h-10 rounded-full bg-midnight-blue text-white flex items-center justify-center shrink-0 shadow-lg shadow-midnight-blue/20">
+                <MdLightbulbOutline className="text-xl" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-midnight-blue mb-2">Consejos rápidos</h4>
+                <ul className="text-sm text-midnight-blue/80 space-y-2 list-disc list-inside marker:text-midnight-blue/50">
+                  <li>El cartel debe verse bien en horizontal (16:9).</li>
+                  <li>Verifica siempre la hora exacta.</li>
+                  <li>Escribe un título corto y llamativo.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
       </aside>
     </div>
   );

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import { getFriendlyErrorMessage } from '@/lib/utils';
 import { 
   MdArrowBack, MdMenu, MdPhotoCamera, MdEdit, MdPerson, 
   MdAlternateEmail, MdLocationOn, MdExpandMore, MdSave 
@@ -172,11 +173,11 @@ export default function EditProfileForm({ onOpenMobilePanel }) {
         }
         alert("¡Perfil guardado correctamente!");
       } else {
-        const errorData = await response.json();
-        alert(`Error al guardar: ${errorData.detail}`);
+        const errorData = await response.json().catch(() => ({}));
+        alert(getFriendlyErrorMessage(errorData, "No se ha podido guardar el perfil. Revisa los campos e inténtalo de nuevo."));
       }
     } catch (error) {
-      alert("Error de conexión con el servidor.");
+      alert("No se ha podido conectar con el servidor para guardar el perfil.");
     } finally {
       setIsLoading(false);
     }
@@ -222,7 +223,7 @@ export default function EditProfileForm({ onOpenMobilePanel }) {
         <div className="relative w-full h-80 group">
           <div className="absolute inset-0 bg-midnight-blue">
             <img alt="Banner LebriJaleo" className="w-full h-full object-cover opacity-80" src={formData.banner_url || defaultBanner} />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+            <div className="absolute inset-0 bg-linear-to-t from-black/70 to-transparent"></div>
           </div>
           
           <div className="absolute top-4 right-4 z-20">
@@ -296,7 +297,7 @@ export default function EditProfileForm({ onOpenMobilePanel }) {
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-midnight-blue">Biografía</label>
                 <div className="relative">
-                  <textarea id="biografia" name="biografia" value={formData.biografia} onChange={handleChange} maxLength={160} className="block w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-midnight-blue text-sm focus:ring-2 focus:ring-lemon-icing focus:border-transparent transition-all min-h-[120px] resize-y" />
+                  <textarea id="biografia" name="biografia" value={formData.biografia} onChange={handleChange} maxLength={160} className="block w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-midnight-blue text-sm focus:ring-2 focus:ring-lemon-icing focus:border-transparent transition-all min-h-30 resize-y" />
                   <div className="absolute bottom-3 right-3 text-xs text-slate-400 pointer-events-none">{formData.biografia.length}/160</div>
                 </div>
               </div>

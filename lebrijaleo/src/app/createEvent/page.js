@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 import Sidebar from "@/components/layout/Navbar";
 
 import { createClient } from "@/utils/supabase/client";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 // Importamos todos los iconos necesarios desde react-icons
 
@@ -36,6 +38,7 @@ const AVAILABLE_CATEGORIES = [
 ];
 
 export default function CreateEventPage() {
+  const router = useRouter();
   const supabase = createClient();
   const fileInputRef = useRef(null);
 
@@ -53,6 +56,7 @@ export default function CreateEventPage() {
 
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+  const minDateTime = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
   const handleInputChange = (e) => {
     const { id, value, type, checked } = e.target;
@@ -124,6 +128,22 @@ export default function CreateEventPage() {
       return;
     }
 
+    if (!formData.date) {
+      alert("Selecciona una fecha y hora para el evento.");
+      return;
+    }
+
+    const selectedDate = new Date(formData.date);
+    if (Number.isNaN(selectedDate.getTime())) {
+      alert("La fecha seleccionada no es válida.");
+      return;
+    }
+
+    if (selectedDate < new Date()) {
+      alert("No puedes crear eventos con una fecha ya pasada.");
+      return;
+    }
+
     const dataToSend = new FormData();
 
     dataToSend.append("banner", imageFile);
@@ -152,13 +172,19 @@ export default function CreateEventPage() {
         const result = await response.json();
 
         alert("¡Evento publicado con éxito en LebriJaleo!");
+        const createdEvent = Array.isArray(result.data) ? result.data[0] : result.data;
+        if (createdEvent?.id_evento) {
+          router.push(`/event/${createdEvent.id_evento}`);
+        } else {
+          router.push("/myEvents");
+        }
       } else {
-        const errorData = await response.json();
-
-        alert(`Error al publicar: ${errorData.detail || "Fallo desconocido"}`);
+        const errorData = await response.json().catch(() => ({}));
+        alert(getFriendlyErrorMessage(errorData, "No se ha podido publicar el evento. Revisa los campos e inténtalo de nuevo."));
       }
     } catch (error) {
       console.error("Error de conexión:", error);
+      alert("No se ha podido conectar con el servidor para publicar el evento.");
     }
   };
 
@@ -273,6 +299,7 @@ export default function CreateEventPage() {
                             id="event-date"
                             type="datetime-local"
                             required
+                            min={minDateTime}
                             value={formData.date}
                             onChange={handleInputChange}
                             className="w-full pl-11 pr-4 py-3 bg-white border border-nimbus-cloud rounded-xl text-midnight-blue focus:ring-2 focus:ring-lemon-icing/80 focus:border-lemon-icing transition-all placeholder:text-midnight-blue/40"
