@@ -110,7 +110,7 @@ def obtener_perfil_publico(user_id: str):
     """Obtiene el perfil público de cualquier usuario por su ID"""
     try:
         response = supabase.table("usuarios").select(
-            "id_usuario, nombre, username, biografia, ubicacion, avatar_url, banner_url, rol"
+            "id_usuario, nombre, username, biografia, ubicacion, avatar_url, banner_url, rol, creado_por"
         ).eq("id_usuario", user_id).single().execute()
         
         perfil = response.data
@@ -728,3 +728,59 @@ def obtener_estado_amigo(user_id: str, authorization: str = Header(None)):
         return {"es_amigo": es_amigo, "conteo_amigos": conteo}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error al obtener estado de amistad: {str(e)}")
+
+
+
+@app.get("/api/mis-amigos")
+def obtener_mis_amigos(current_user = Depends(get_current_user)):
+    """Obtiene la lista de amigos (usuarios que sigo) del usuario autenticado"""
+    try:
+        # 1. Obtener los IDs de amigos
+        amigos_response = supabase.table("amigos").select("id_amigo, created_at").eq("id_usuario", current_user.id).order("created_at", desc=True).execute()
+
+        if not amigos_response.data:
+            return {"mensaje": "No tienes amigos aún", "data": []}
+
+        amigo_ids = [a["id_amigo"] for a in amigos_response.data]
+
+        # 2. Obtener los perfiles de esos usuarios
+        perfiles_response = supabase.table("usuarios").select(
+            "id_usuario, nombre, username, avatar_url, rol, ubicacion"
+        ).in_("id_usuario", amigo_ids).execute()
+
+        # 3. Crear mapa de fecha de amistad
+        fecha_map = {a["id_amigo"]: a["created_at"] for a in amigos_response.data}
+
+        # 4. Combinar datos
+        amigos = []
+        for perfil in perfiles_response.data:
+            perfil["amigo_desde"] = fecha_map.get(perfil["id_usuario"])
+            amigos.append(perfil)
+
+        return {"mensaje": "Amigos recuperados con éxito", "data": amigos}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al obtener amigos: {str(e)}")
+
+@app.get("/api/usuarios/buscar")
+def buscar_usuarios(q: str = "", current_user = Depends(get_current_user)):
+    """Busca usuarios por nombre o username"""
+    try:
+        if not q or len(q) < 2:
+            return {"data": []}
+
+        # Buscar por nombre o username (ilike = case insensitive)
+        response = supabase.table("usuarios").select(
+            "id_usuario, nombre, username, avatar_url, rol, ubicacion"
+        ).or_(f"nombre.ilike.%{q}%,username.ilike.%{q}%").neq("id_usuario", current_user.id).limit(20).execute()
+
+        # Para cada resultado, comprobar si ya es amigo
+        resultados = []
+        for user in response.data:
+            # Check friendship
+            friend_check = supabase.table("amigos").select("id").eq("id_usuario", current_user.id).eq("id_amigo", user["id_usuario"]).execute()
+            user["es_amigo"] = len(friend_check.data) > 0 if friend_check.data else False
+            resultados.append(user)
+
+        return {"data": resultados}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al buscar usuarios: {str(e)}")
