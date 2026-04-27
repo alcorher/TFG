@@ -1,471 +1,608 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import Sidebar from '@/components/layout/Navbar';
+import EventCard from '@/components/events/EventCard';
 import { createClient } from '@/utils/supabase/client';
-import JSZip from 'jszip';
-import { generateStatsTxt, fetchOrganizerStats } from '@/utils/statsDownload';
-import {
-  MdMenu, MdSearch, MdAdd, MdMail, MdEvent,
-  MdDelete, MdArrowForward, MdStorefront, MdClose,
-  MdPerson, MdCheckCircle, MdWarning, MdLocationOn,
-  MdDownload,
+import { 
+  MdArrowBack, MdGroup, MdMenu, MdClose,
+  MdBookmark, MdGridView, MdViewList, 
+  MdEventNote, MdInfoOutline, MdLocationOn,
+  MdPersonAdd, MdPersonRemove, MdAdminPanelSettings, MdDownload,
+  MdCheckCircle, MdErrorOutline
 } from "react-icons/md";
+import { generateStatsTxt, downloadTxt, fetchOrganizerStats } from '@/utils/statsDownload';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-// ─── Dialogo de confirmación de borrado ────────────────────────────────────
-function ConfirmDialog({ empresario, onConfirm, onCancel, isLoading }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full mx-4 flex flex-col gap-5">
-        <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
-          <MdWarning className="text-3xl text-red-500" />
-        </div>
-        <div className="text-center">
-          <h3 className="font-bold text-midnight-blue text-xl mb-2">¿Eliminar empresario?</h3>
-          <p className="text-midnight-blue/60 text-sm leading-relaxed">
-            Se revocará el rol de empresario a{' '}
-            <span className="font-bold text-midnight-blue">{empresario?.nombre}</span>.
-            Su cuenta pasará a ser un Cliente normal.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            disabled={isLoading}
-            className="flex-1 py-3 rounded-xl border border-nimbus-cloud/50 text-midnight-blue/70 text-sm font-bold hover:bg-cloud-dancer transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isLoading}
-            className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors disabled:opacity-60"
-          >
-            {isLoading ? 'Eliminando...' : 'Sí, eliminar'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Tarjeta de empresario ────────────────────────────────────────────────
-function EmpresarioCard({ emp, onDelete, onViewProfile }) {
-  const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.nombre)}&background=F6EBC8&color=1e293b`;
-
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-nimbus-cloud/40 flex flex-col hover:shadow-md hover:border-lemon-icing transition-all group">
-      {/* Cabecera con avatar */}
-      <div className="p-5 flex items-center gap-4 border-b border-nimbus-cloud/30">
-        <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-cloud-dancer border border-nimbus-cloud/30">
-          <img
-            src={emp.foto_perfil || emp.avatar_url || defaultAvatar}
-            alt={`Avatar de ${emp.nombre}`}
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="min-w-0">
-          <h3 className="font-bold text-base text-midnight-blue truncate">{emp.nombre}</h3>
-          {emp.username && (
-            <p className="text-xs text-midnight-blue/50 font-medium">@{emp.username}</p>
-          )}
-        </div>
-        <div className="ml-auto shrink-0">
-         
-        </div>
-      </div>
-
-      {/* Info */}
-      <div className="p-5 flex-1 space-y-3">
-        <div className="flex items-center gap-2.5 text-sm text-midnight-blue/70">
-          <MdMail className="text-lg text-midnight-blue/35 shrink-0" />
-          <span className="truncate">{emp.email}</span>
-        </div>
-        <div className="flex items-center gap-2.5 text-sm text-midnight-blue/70">
-          <MdEvent className="text-lg text-midnight-blue/35 shrink-0" />
-          <span>
-            <span className="font-bold text-midnight-blue">{emp.num_eventos}</span>
-            {' '}evento{emp.num_eventos !== 1 ? 's' : ''} publicado{emp.num_eventos !== 1 ? 's' : ''}
-          </span>
-        </div>
-        {emp.ubicacion && (
-          <div className="flex items-center gap-2.5 text-sm text-midnight-blue/70">
-            <MdPerson className="text-lg text-midnight-blue/35 shrink-0" />
-            <span className="truncate">{emp.ubicacion}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Acciones */}
-      <div className="p-4 bg-form-bg border-t border-nimbus-cloud/30 flex gap-2 rounded-b-2xl">
-        <button
-          onClick={() => onViewProfile(emp.id_usuario)}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-lemon-icing text-midnight-blue rounded-xl text-sm font-bold hover:brightness-95 transition-colors shadow-sm"
-        >
-          <span>Ver perfil</span>
-          <MdArrowForward className="text-base" />
-        </button>
-        <button
-          onClick={() => onDelete(emp)}
-          className="flex items-center justify-center p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-          title="Revocar rol de empresario"
-        >
-          <MdDelete className="text-xl" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Skeleton card para loading ───────────────────────────────────────────
-function SkeletonCard() {
-  return (
-    <div className="bg-white rounded-2xl border border-nimbus-cloud/30 p-5 animate-pulse">
-      <div className="flex items-center gap-4 mb-4">
-        <div className="w-14 h-14 rounded-xl bg-cloud-dancer" />
-        <div className="flex-1 space-y-2">
-          <div className="h-4 bg-cloud-dancer rounded-lg w-3/4" />
-          <div className="h-3 bg-cloud-dancer rounded-lg w-1/2" />
-        </div>
-      </div>
-      <div className="space-y-3">
-        <div className="h-3 bg-cloud-dancer rounded-lg w-full" />
-        <div className="h-3 bg-cloud-dancer rounded-lg w-2/3" />
-      </div>
-    </div>
-  );
-}
-
-// ─── Página principal ────────────────────────────────────────────────────
-export default function MyOrganizersPage() {
+export default function PublicProfilePage() {
   const router = useRouter();
+  const { id } = useParams();
   const supabase = createClient();
 
-  const [empresarios, setEmpresarios] = useState([]);
+  const [profileData, setProfileData] = useState(null);
+  const [eventos, setEventos] = useState([]);
+  const [favoritos, setFavoritos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [token, setToken] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
 
-  // Estado para el diálogo de confirmación
-  const [empToDelete, setEmpToDelete] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  // Friend system state
+  const [esAmigo, setEsAmigo] = useState(false);
+  const [conteoAmigos, setConteoAmigos] = useState(0);
+  const [friendLoading, setFriendLoading] = useState(false);
 
-  // ── Toast de feedback ──
-  const [toast, setToast] = useState(null); // { type: 'success'|'error', msg: string }
-  const [exportLoading, setExportLoading] = useState(false);
+  // Admin state
+  const [currentUserRol, setCurrentUserRol] = useState(null);
+  const [rolLoading, setRolLoading] = useState(false);
+  const [removeRolLoading, setRemoveRolLoading] = useState(false);
+  const [rolMessage, setRolMessage] = useState('');
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [statsToast, setStatsToast] = useState(null);
 
-  const showToast = useCallback((type, msg) => {
-    setToast({ type, msg });
-    setTimeout(() => setToast(null), 3500);
-  }, []);
+  // Mobile panel
+  const [showMobilePanel, setShowMobilePanel] = useState(false);
 
-  // ── Carga inicial ──
+  const showStatsToast = (type, message) => {
+    setStatsToast({ type, message });
+    setTimeout(() => setStatsToast(null), 3000);
+  };
+
+  const reloadCurrentPage = () => {
+    window.location.reload();
+  };
+
   useEffect(() => {
-    async function load() {
+    async function loadPublicProfile() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { router.push('/login'); return; }
 
-        const accessToken = session.access_token;
-        setToken(accessToken);
-
-        // Verificar que el usuario es Administrador; si no, redirigir
-        const perfilRes = await fetch(`${API_URL}/api/perfil`, {
-          headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
-        if (perfilRes.ok) {
-          const perfil = await perfilRes.json();
-          if (perfil.rol !== 'Administrador') {
-            router.push('/home');
-            return;
-          }
-        } else {
-          router.push('/home');
+        // Check if this is the current user's own profile
+        if (session && session.user.id === id) {
+          router.replace('/profile');
           return;
         }
 
-        // Solo llega aquí si es Administrador
-        await fetchEmpresarios(accessToken);
+        if (session) {
+          setCurrentUserId(session.user.id);
+        }
+
+        // Fetch the public profile
+        const res = await fetch(`${API_URL}/api/perfil/${id}`);
+
+        if (!res.ok) {
+          throw new Error("Perfil no encontrado");
+        }
+
+        const data = await res.json();
+        setProfileData(data.perfil);
+        setEventos(data.eventos || []);
+        setFavoritos(data.favoritos || []);
+
+        // Fetch friend status
+        const headers = {};
+        if (session) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        const friendRes = await fetch(`${API_URL}/api/amigos/${id}/estado`, { headers });
+        if (friendRes.ok) {
+          const friendData = await friendRes.json();
+          setEsAmigo(friendData.es_amigo);
+          setConteoAmigos(friendData.conteo_amigos);
+        }
+
+        // If logged in, get current user's role for admin features
+        if (session) {
+          const profileRes = await fetch(`${API_URL}/api/perfil`, {
+            headers: { 'Authorization': `Bearer ${session.access_token}` }
+          });
+          if (profileRes.ok) {
+            const myProfile = await profileRes.json();
+            setCurrentUserRol(myProfile.rol);
+          }
+        }
+
       } catch (err) {
-        console.error('Error en carga inicial:', err);
+        console.error("Error cargando perfil público:", err);
+        setError("No hemos podido encontrar este perfil.");
       } finally {
         setIsLoading(false);
       }
     }
-    load();
-  }, []);
 
-  async function fetchEmpresarios(accessToken) {
-    const res = await fetch(`${API_URL}/api/empresarios`, {
-      headers: { 'Authorization': `Bearer ${accessToken || token}` }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setEmpresarios(data.data || []);
-    } else {
-      console.error('Error al obtener empresarios');
+    if (id) {
+      loadPublicProfile();
     }
-  }
+  }, [id, router, supabase]);
 
-  // ── Eliminar (revocar rol) ──
-  async function handleConfirmDelete() {
-    if (!empToDelete) return;
-    setIsDeleting(true);
+  // Toggle friend
+  const handleToggleFriend = async () => {
+    setFriendLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/empresarios/${empToDelete.id_usuario}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        setEmpresarios(prev => prev.filter(e => e.id_usuario !== empToDelete.id_usuario));
-        showToast('success', `Rol de "${empToDelete.nombre}" revocado correctamente.`);
-      } else {
-        const err = await res.json();
-        showToast('error', err.detail || 'No tienes permisos para realizar esta acción.');
-      }
-    } catch (err) {
-      showToast('error', 'Error de conexión. Inténtalo de nuevo.');
-    } finally {
-      setIsDeleting(false);
-      setEmpToDelete(null);
-    }
-  }
-
-  // ── Exportar estadísticas de todos como .zip ──
-  const handleExportAll = async () => {
-    setExportLoading(true);
-    try {
-      const zip = new JSZip();
-      const results = await Promise.allSettled(
-        empresarios.map(emp => fetchOrganizerStats(emp.id_usuario, token, API_URL))
-      );
-
-      let count = 0;
-      results.forEach((result, i) => {
-        if (result.status === 'fulfilled') {
-          const stats = result.value;
-          const txt = generateStatsTxt(stats);
-          const safeName = (stats.nombre || `organizador_${i + 1}`).replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ ]/g, '').replace(/\s+/g, '_');
-          zip.file(`estadisticas_${safeName}.txt`, txt);
-          count++;
-        }
-      });
-
-      if (count === 0) {
-        showToast('error', 'No se pudieron obtener estadísticas de ningún organizador.');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/login');
         return;
       }
 
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const fecha = new Date().toISOString().split('T')[0];
-      a.download = `estadisticas_organizadores_${fecha}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const res = await fetch(`${API_URL}/api/amigos/${id}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
 
-      showToast('success', `Exportadas estadísticas de ${count} organizador${count !== 1 ? 'es' : ''}.`);
+      if (res.ok) {
+        const data = await res.json();
+        setEsAmigo(data.es_amigo);
+        setConteoAmigos(data.conteo_amigos);
+      }
     } catch (err) {
-      console.error('Error exportando estadísticas:', err);
-      showToast('error', 'Error al exportar las estadísticas.');
+      console.error("Error toggling friend:", err);
     } finally {
-      setExportLoading(false);
+      setFriendLoading(false);
     }
   };
 
-  // ── Filtrado por búsqueda ──
-  const empresariosFiltrados = empresarios.filter(emp =>
-    emp.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (emp.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (emp.username || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Assign Organizador role
+  const handleAsignarRol = async () => {
+    setRolLoading(true);
+    setRolMessage('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-  // ── Loading skeleton ──
+      const res = await fetch(`${API_URL}/api/admin/asignar-rol/${id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setRolMessage(data.mensaje || 'Rol asignado con éxito');
+        // Update the profile data locally
+        setProfileData(prev => ({ ...prev, rol: 'Empresario' }));
+        reloadCurrentPage();
+      } else {
+        setRolMessage(data.detail || 'Error al asignar rol');
+      }
+    } catch (err) {
+      setRolMessage('Error de conexión');
+    } finally {
+      setRolLoading(false);
+    }
+  };
+
+  const handleDownloadStats = async () => {
+    setStatsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/login');
+        return;
+      }
+
+      const stats = await fetchOrganizerStats(id, session.access_token, API_URL);
+      const txt = generateStatsTxt(stats);
+      const safeName = (stats.nombre || 'organizador')
+        .replace(/[^a-zA-Z0-9\u00E1\u00E9\u00ED\u00F3\u00FA\u00F1\u00C1\u00C9\u00CD\u00D3\u00DA\u00D1 ]/g, '')
+        .replace(/\s+/g, '_');
+
+      downloadTxt(txt, `estadisticas_${safeName}.txt`);
+      showStatsToast('success', 'Estadísticas descargadas correctamente.');
+    } catch (err) {
+      console.error('Error descargando estadísticas:', err);
+      showStatsToast('error', err?.message || 'No se pudieron descargar las estadísticas.');
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  const handleQuitarRol = async () => {
+    setRemoveRolLoading(true);
+    setRolMessage('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch(`${API_URL}/api/empresarios/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        setRolMessage(data.mensaje || 'Rol de organizador revocado con éxito');
+        setProfileData(prev => ({ ...prev, rol: 'Cliente', creado_por: null }));
+        setEventos([]);
+        reloadCurrentPage();
+      } else {
+        setRolMessage(data.detail || 'Error al revocar el rol');
+      }
+    } catch (err) {
+      setRolMessage('Error de conexión');
+    } finally {
+      setRemoveRolLoading(false);
+    }
+  };
+
+  // --- Loading ---
   if (isLoading) {
     return (
-      <div className="bg-cloud-dancer text-midnight-blue font-display antialiased overflow-hidden h-screen flex">
-        <Sidebar />
-        <main className="flex-1 flex flex-col h-full overflow-hidden bg-form-bg relative">
-          <header className="h-20 px-8 flex items-center gap-4 bg-white/80 backdrop-blur-md border-b border-nimbus-cloud/40">
-            <div className="h-10 w-72 bg-cloud-dancer rounded-xl animate-pulse" />
-          </header>
-          <div className="flex-1 overflow-y-auto p-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="h-8 w-64 bg-cloud-dancer rounded-xl animate-pulse mb-8" />
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1,2,3,4,5,6].map(i => <SkeletonCard key={i} />)}
-              </div>
-            </div>
-          </div>
-        </main>
+      <div className="bg-cloud-dancer h-screen flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-lemon-icing border-t-midnight-blue rounded-full animate-spin"></div>
       </div>
     );
   }
+
+  // --- Error / Not found ---
+  if (error || !profileData) {
+    return (
+      <div className="bg-cloud-dancer h-screen flex flex-col items-center justify-center text-midnight-blue">
+        <MdInfoOutline className="text-6xl mb-4 text-midnight-blue/40" />
+        <h2 className="text-2xl font-bold mb-2">Perfil no encontrado</h2>
+        <p className="text-midnight-blue/60 mb-6">{error || "Este usuario no existe."}</p>
+        <button
+          onClick={() => router.push('/home')}
+          className="bg-lemon-icing px-6 py-3 rounded-xl font-bold hover:brightness-95 transition-all"
+        >
+          Volver a la cartelera
+        </button>
+      </div>
+    );
+  }
+
+  const defaultAvatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(profileData.nombre || 'U') + "&background=F6EBC8&color=1e293b";
+  const defaultBanner = "https://images.unsplash.com/photo-1518605368461-1ee46062f6b8?q=80&w=2093";
+  const isOrganizer = profileData.rol === 'Empresario';
+  const isAdmin = currentUserRol === 'Administrador';
+  const canMakeEmpresario = isAdmin && profileData.rol === 'Cliente';
+  const isAdminCreator = isAdmin && profileData.creado_por === currentUserId;
+  const canRemoveEmpresario = isAdminCreator && profileData.rol === 'Empresario';
+  const isSelfOrganizer = currentUserRol === 'Empresario' && currentUserId === id;
+  const canDownloadStats = isOrganizer && (isSelfOrganizer || isAdminCreator);
+
+  // Sidebar content (reused for desktop aside and mobile drawer)
+  const SidebarContent = () => (
+    <div className="bg-white rounded-2xl flex flex-col gap-3">
+      <h3 className="text-midnight-blue font-bold text-lg">Acciones</h3>
+
+      {/* Add/Remove Friend Button */}
+      <button
+        onClick={handleToggleFriend}
+        disabled={friendLoading}
+        className={`w-full py-3 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 ${
+          esAmigo
+            ? 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-100'
+            : 'bg-lemon-icing hover:brightness-95 text-midnight-blue'
+        }`}
+      >
+        {friendLoading ? (
+          <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+        ) : esAmigo ? (
+          <>
+            <MdPersonRemove className="text-xl" />
+            <span>Eliminar Amigo</span>
+          </>
+        ) : (
+          <>
+            <MdPersonAdd className="text-xl" />
+            <span>Añadir Amigo</span>
+          </>
+        )}
+      </button>
+
+      {/* Make Organizador Button (Admin only, target must be Cliente) */}
+      {canMakeEmpresario && (
+        <button
+          onClick={handleAsignarRol}
+          disabled={rolLoading}
+          className="w-full py-3 bg-lemon-icing hover:brightness-95 text-black font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-60"
+        >
+          {rolLoading ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <>
+              <MdAdminPanelSettings className="text-xl" />
+              <span>Hacer Organizador</span>
+            </>
+          )}
+        </button>
+      )}
+
+      {canRemoveEmpresario && (
+        <button
+          onClick={handleQuitarRol}
+          disabled={removeRolLoading}
+          className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm border border-red-100 disabled:opacity-60"
+        >
+          {removeRolLoading ? (
+            <div className="w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <>
+              <MdAdminPanelSettings className="text-xl" />
+              <span>Quitar Organizador</span>
+            </>
+          )}
+        </button>
+      )}
+
+      {/* Role assignment feedback message */}
+      {rolMessage && (
+        <div className={`text-sm font-medium p-3 rounded-xl text-center ${
+          rolMessage.includes('Error') || rolMessage.includes('error')
+            ? 'bg-red-50 text-red-600 border border-red-100'
+            : 'bg-green-50 text-green-700 border border-green-100'
+        }`}>
+          {rolMessage}
+        </div>
+      )}
+
+      {canDownloadStats && (
+        <button
+          onClick={handleDownloadStats}
+          disabled={statsLoading}
+          className="w-full py-3 bg-white border border-nimbus-cloud/50 hover:bg-cloud-dancer text-midnight-blue/70 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-60"
+        >
+          {statsLoading ? (
+            <div className="w-5 h-5 border-2 border-midnight-blue/30 border-t-midnight-blue rounded-full animate-spin" />
+          ) : (
+            <>
+              <MdDownload className="text-xl" />
+              <span>Descargar Estadísticas</span>
+            </>
+          )}
+        </button>
+      )}
+
+      
+    
+    </div>
+  );
 
   return (
     <div className="bg-cloud-dancer text-midnight-blue font-display antialiased overflow-hidden h-screen flex">
       <Sidebar />
 
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-form-bg relative">
-
-        {/* ── CABECERA ── */}
-        <header className="h-20 px-4 md:px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-nimbus-cloud/40">
+        <header className="h-20 px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-nimbus-cloud/40">
           <div className="flex items-center gap-4 flex-1">
-            <button className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors lg:hidden">
-              <MdMenu className="text-2xl" />
+            <button 
+              onClick={() => router.back()}
+              className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors"
+            >
+              <MdArrowBack className="text-xl" />
             </button>
-            <div className="relative max-w-md w-full hidden sm:block">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-midnight-blue/40 pointer-events-none">
-                <MdSearch className="text-xl" />
-              </span>
-              <input
-                className="w-full pl-10 pr-4 py-2.5 bg-white/50 border border-nimbus-cloud/50 rounded-xl text-sm focus:ring-2 focus:ring-lemon-icing/80 focus:bg-white transition-all placeholder:text-midnight-blue/40"
-                placeholder="Buscar por nombre, email o usuario..."
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-midnight-blue/40 hover:text-midnight-blue transition-colors"
-                >
-                  <MdClose className="text-lg" />
-                </button>
-              )}
-            </div>
+            <h2 className="text-lg font-bold text-midnight-blue">
+              {isOrganizer ? 'Perfil de Organizador' : 'Perfil de Usuario'}
+            </h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setShowMobilePanel(true)}
+              className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors xl:hidden"
+            >
+              <MdMenu className="text-xl" />
+            </button>
           </div>
         </header>
 
-        {/* ── CONTENIDO PRINCIPAL ── */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <div className="max-w-7xl mx-auto">
-
-            {/* Título */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-midnight-blue tracking-tight mb-1">
-                  Gestión de Empresarios
-                </h1>
-                <p className="text-midnight-blue/60 font-medium">
-                  {empresarios.length} organizador{empresarios.length !== 1 ? 'es' : ''} registrado{empresarios.length !== 1 ? 's' : ''} en la plataforma.
-                </p>
-              </div>
-              {empresarios.length > 0 && (
-                <button
-                  onClick={handleExportAll}
-                  disabled={exportLoading}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-lemon-icing text-midnight-blue font-bold rounded-xl text-sm hover:brightness-95 transition-all shadow-sm disabled:opacity-60 shrink-0"
-                >
-                  {exportLoading ? (
-                    <div className="w-5 h-5 border-2 border-midnight-blue/30 border-t-midnight-blue rounded-full animate-spin" />
-                  ) : (
-                    <MdDownload className="text-xl" />
+        <div className="flex-1 overflow-y-auto no-scrollbar">
+          {/* Cabecera del Perfil */}
+          <div className="relative w-full h-80">
+            <div className="absolute inset-0 bg-midnight-blue">
+              <img 
+                alt={`Portada de ${profileData.nombre}`}
+                className="w-full h-full object-cover opacity-80" 
+                src={profileData.banner_url || defaultBanner}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            </div>
+            <div className="absolute bottom-0 left-0 w-full px-8 pb-8 pt-20">
+              <div className="flex items-end gap-6 max-w-7xl mx-auto">
+                <div className="relative w-32 h-32 rounded-full border-4 border-white shadow-2xl overflow-hidden shrink-0 bg-white">
+                  <img 
+                    alt={`Avatar de ${profileData.nombre}`} 
+                    className="w-full h-full object-cover" 
+                    src={profileData.avatar_url || defaultAvatar}
+                  />
+                </div>
+                <div className="pb-2 text-white drop-shadow-md">
+                  <h1 className="text-3xl font-bold tracking-tight mb-1">{profileData.nombre}</h1>
+                  {profileData.username && (
+                    <p className="text-white/70 text-sm font-medium mb-1">@{profileData.username}</p>
                   )}
-                  <span>{exportLoading ? 'Exportando...' : 'Exportar estadísticas (.zip)'}</span>
-                </button>
+                  {isOrganizer && (
+                    <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-full border border-white/10 mb-2">
+                      Organizador
+                    </span>
+                  )}
+                  <p className="text-white/90 max-w-2xl text-lg font-medium leading-relaxed">
+                    {profileData.biografia}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="max-w-7xl mx-auto px-8 py-8">
+            {/* Tarjetas de Estadísticas */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              {isOrganizer ? (
+                <div className="bg-white rounded-2xl p-5 border border-nimbus-cloud/30 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+                    <MdEventNote className="text-2xl" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-midnight-blue/60 font-medium">Eventos publicados</p>
+                    <p className="text-2xl font-bold text-midnight-blue">{eventos.length}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl p-5 border border-nimbus-cloud/30 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-red-50 text-red-500 flex items-center justify-center">
+                    <MdBookmark className="text-2xl" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-midnight-blue/60 font-medium">Eventos favoritos</p>
+                    <p className="text-2xl font-bold text-midnight-blue">{favoritos.length}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Friend count stat card */}
+              <div className="bg-white rounded-2xl p-5 border border-nimbus-cloud/30 shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                  <MdGroup className="text-2xl" />
+                </div>
+                <div>
+                  <p className="text-sm text-midnight-blue/60 font-medium">Seguidores</p>
+                  <p className="text-2xl font-bold text-midnight-blue">{conteoAmigos}</p>
+                </div>
+              </div>
+
+              {profileData.ubicacion && (
+                <div className="bg-white rounded-2xl p-5 border border-nimbus-cloud/30 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <MdLocationOn className="text-2xl" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-midnight-blue/60 font-medium">Ubicación</p>
+                    <p className="text-2xl font-bold text-midnight-blue">{profileData.ubicacion}</p>
+                  </div>
+                </div>
               )}
             </div>
 
-            {/* Buscador móvil */}
-            <div className="sm:hidden mb-6">
-              <div className="relative w-full">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-midnight-blue/40 pointer-events-none">
-                  <MdSearch className="text-xl" />
-                </span>
-                <input
-                  className="w-full pl-10 pr-10 py-2.5 bg-white/50 border border-nimbus-cloud/50 rounded-xl text-sm focus:ring-2 focus:ring-lemon-icing/80 focus:bg-white transition-all placeholder:text-midnight-blue/40"
-                  placeholder="Buscar..."
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                {searchTerm && (
-                  <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-midnight-blue/40">
-                    <MdClose className="text-lg" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Grid de empresarios */}
-            {empresariosFiltrados.length === 0 ? (
-              <div className="text-center py-24 bg-white/40 rounded-3xl border-2 border-dashed border-nimbus-cloud/30">
-                <MdStorefront className="text-6xl text-midnight-blue/15 mx-auto mb-4" />
-                <p className="text-midnight-blue/50 font-semibold text-lg">
-                  {searchTerm ? 'Sin resultados para tu búsqueda.' : 'No hay empresarios registrados aún.'}
-                </p>
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="mt-4 text-sm text-midnight-blue/60 underline hover:text-midnight-blue transition-colors"
-                  >
-                    Limpiar búsqueda
-                  </button>
-                )}
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {empresariosFiltrados.map((emp) => (
-                    <EmpresarioCard
-                      key={emp.id_usuario}
-                      emp={emp}
-                      onDelete={setEmpToDelete}
-                      onViewProfile={(id) => router.push(`/profile/${id}`)}
-                    />
-                  ))}
+            {/* Eventos del organizador */}
+            {isOrganizer && (
+              <div className="mb-12">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-midnight-blue">Eventos de {profileData.nombre}</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-midnight-blue/40 uppercase tracking-wider hidden sm:block">Vista:</span>
+                    <button 
+                      onClick={() => setViewMode('grid')}
+                      className={`p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm border border-nimbus-cloud/50 text-midnight-blue' : 'text-midnight-blue/40 hover:text-midnight-blue/70 hover:bg-white/50'}`}
+                    >
+                      <MdGridView className="text-xl" />
+                    </button>
+                    <button 
+                      onClick={() => setViewMode('list')}
+                      className={`p-1.5 rounded transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm border border-nimbus-cloud/50 text-midnight-blue' : 'text-midnight-blue/40 hover:text-midnight-blue/70 hover:bg-white/50'}`}
+                    >
+                      <MdViewList className="text-xl" />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Pie de página con totales */}
-                <div className="mt-8 flex items-center justify-between px-1">
-                  <p className="text-xs text-midnight-blue/50 font-medium">
-                    Mostrando{' '}
-                    <span className="font-bold text-midnight-blue">{empresariosFiltrados.length}</span>
-                    {' '}de{' '}
-                    <span className="font-bold text-midnight-blue">{empresarios.length}</span>
-                    {' '}empresarios
-                  </p>
-                </div>
-              </>
+                {eventos.length === 0 ? (
+                  <div className="text-center py-20 bg-white/40 rounded-3xl border-2 border-dashed border-nimbus-cloud/30">
+                    <MdEventNote className="text-5xl text-midnight-blue/20 mx-auto mb-4" />
+                    <p className="text-slate-500 font-medium">Este organizador aún no ha publicado eventos.</p>
+                  </div>
+                ) : (
+                  <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                    {eventos.map(evento => (
+                      <EventCard key={evento.id_evento || evento.id} evento={evento} />
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
-            <div className="h-12" />
+            {/* Favoritos del usuario */}
+            {!isOrganizer && (
+              <div className="mb-12">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-midnight-blue">Favoritos de {profileData.nombre}</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-midnight-blue/40 uppercase tracking-wider hidden sm:block">Vista:</span>
+                    <button 
+                      onClick={() => setViewMode('grid')}
+                      className={`p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm border border-nimbus-cloud/50 text-midnight-blue' : 'text-midnight-blue/40 hover:text-midnight-blue/70 hover:bg-white/50'}`}
+                    >
+                      <MdGridView className="text-xl" />
+                    </button>
+                    <button 
+                      onClick={() => setViewMode('list')}
+                      className={`p-1.5 rounded transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm border border-nimbus-cloud/50 text-midnight-blue' : 'text-midnight-blue/40 hover:text-midnight-blue/70 hover:bg-white/50'}`}
+                    >
+                      <MdViewList className="text-xl" />
+                    </button>
+                  </div>
+                </div>
+
+                {favoritos.length === 0 ? (
+                  <div className="text-center py-20 bg-white/40 rounded-3xl border-2 border-dashed border-nimbus-cloud/30">
+                    <MdBookmark className="text-5xl text-midnight-blue/20 mx-auto mb-4" />
+                    <p className="text-slate-500 font-medium">{profileData.nombre} aún no tiene eventos favoritos.</p>
+                  </div>
+                ) : (
+                  <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                    {favoritos.map(evento => (
+                      <EventCard key={evento.id_evento || evento.id} evento={evento} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </main>
 
-      {/* ── DIÁLOGO CONFIRMACIÓN ── */}
-      {empToDelete && (
-        <ConfirmDialog
-          empresario={empToDelete}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setEmpToDelete(null)}
-          isLoading={isDeleting}
-        />
-      )}
+      {/* ASIDE DERECHO (Acciones) — Desktop */}
+      <aside className="w-80 bg-white border-l border-nimbus-cloud/40 p-6 flex flex-col gap-8 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto hidden xl:flex shrink-0">
+        <SidebarContent />
+      </aside>
 
-      {/* ── TOAST ── */}
-      {toast && (
-        <div
-          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-semibold transition-all animate-in slide-in-from-bottom-4 duration-300 ${
-            toast.type === 'success'
-              ? 'bg-midnight-blue text-white'
-              : 'bg-red-500 text-white'
+      {/* PANEL MÓVIL — Overlay + Drawer */}
+      <div 
+        className={`fixed inset-0 z-50 xl:hidden transition-opacity duration-300 ${
+          showMobilePanel ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
+          onClick={() => setShowMobilePanel(false)} 
+        />
+        {/* Drawer */}
+        <aside 
+          className={`absolute top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl p-6 flex flex-col gap-8 overflow-y-auto transition-transform duration-300 ease-out ${
+            showMobilePanel ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
-          {toast.type === 'success'
-            ? <MdCheckCircle className="text-xl shrink-0" />
-            : <MdWarning className="text-xl shrink-0" />
-          }
-          <span>{toast.msg}</span>
+          <div className="flex items-center justify-between">
+            <h3 className="text-midnight-blue font-bold text-lg">Acciones</h3>
+            <button 
+              onClick={() => setShowMobilePanel(false)}
+              className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors"
+            >
+              <MdClose className="text-xl" />
+            </button>
+          </div>
+          <SidebarContent />
+        </aside>
+      </div>
+
+      {statsToast && (
+        <div
+          className={`fixed bottom-6 right-6 z-60 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-xl ${
+            statsToast.type === 'success'
+              ? 'bg-green-600 text-white'
+              : 'bg-red-600 text-white'
+          }`}
+        >
+          {statsToast.type === 'success' ? (
+            <MdCheckCircle className="text-lg" />
+          ) : (
+            <MdErrorOutline className="text-lg" />
+          )}
+          <span>{statsToast.message}</span>
         </div>
       )}
     </div>
