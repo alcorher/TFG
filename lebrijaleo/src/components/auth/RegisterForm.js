@@ -239,7 +239,7 @@ export default function RegisterForm() {
 
       {/* Botón de Contacto Admin */}
       <a
-        href="mailto:tu_correo_admin@lebrijaleo.com?subject=Solicitud de cuenta de Organizador en LebriJaleo&body=Hola, me gustaría solicitar una cuenta de empresario para publicar eventos."
+        href="mailto:acorher2911@g.educaand.es?subject=Solicitud de cuenta de Organizador en LebriJaleo&body=Hola, me gustaría solicitar el rol de organizador para publicar eventos, mi nombre de usuario es [tu_nombre_de_usuario], me dedico a eventos de [tipo de eventos]."
         className="flex items-start gap-4 p-4 bg-white/50 rounded-2xl border border-nimbus-cloud/50 hover:border-nimbus-cloud hover:bg-white transition-all cursor-pointer group decoration-none"
       >
         <div className="flex items-center h-5 mt-0.5">
