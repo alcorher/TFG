@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/layout/Navbar'; // Asegúrate de que esta ruta es la correcta en tu proyecto
 import EventCard from '@/components/events/EventCard';
 import { DateRangePicker } from '@/components/events/DateRangePicker';
-import { isWithinInterval, parseISO } from 'date-fns';
+import { isWithinInterval, parseISO, startOfDay, endOfDay, isAfter, isEqual } from 'date-fns';
 import { 
   MdSearch, MdFilterList, MdSpaceDashboard, MdGridView, MdViewList, 
   MdClose, MdStorefront, MdArrowForward, MdMenu, MdCheck
@@ -41,6 +41,27 @@ export default function HomePage() {
         if (response.ok) {
           const result = await response.json();
           setEventos(result.data);
+
+          // Si no hay un rango de fecha activo, establecer un rango por defecto
+          // desde hoy hasta la fecha del noveno evento siguiente (o el último disponible)
+          try {
+            const eventosData = result.data || [];
+            const todayStart = startOfDay(new Date());
+            const futureEvents = eventosData
+              .filter(e => e.fecha)
+              .map(e => ({ ...e, _fechaDate: parseISO(e.fecha) }))
+              .filter(e => isAfter(e._fechaDate, todayStart) || isEqual(e._fechaDate, todayStart))
+              .sort((a, b) => a._fechaDate - b._fechaDate);
+
+            if ((!dateRange?.from || !dateRange?.to) && futureEvents.length > 0) {
+              const idx = Math.min(8, futureEvents.length - 1);
+              const toDate = endOfDay(futureEvents[idx]._fechaDate);
+              setDateRange({ from: todayStart, to: toDate });
+            }
+          } catch (err) {
+            // Silenciar errores no críticos de cálculo de rango
+            console.error('Error calculando rango de fecha por defecto:', err);
+          }
         } else {
           console.error("Error al obtener eventos");
         }
@@ -96,15 +117,24 @@ export default function HomePage() {
       activeFilters.includes(evento.categoria);
 
     let coincideFecha = true;
-    if (dateRange?.from && dateRange?.to && evento.fecha) {
-      const fechaEvento = parseISO(evento.fecha);
+    const fechaEvento = evento.fecha ? parseISO(evento.fecha) : null;
+
+    if (dateRange?.from && dateRange?.to && fechaEvento) {
       try {
         coincideFecha = isWithinInterval(fechaEvento, {
           start: dateRange.from,
           end: dateRange.to,
         });
       } catch (error) {
-        coincideFecha = true; 
+        coincideFecha = true;
+      }
+    } else {
+      // Si NO hay filtros de fecha activos, no mostrar eventos pasados
+      if (fechaEvento) {
+        const todayStart = startOfDay(new Date());
+        coincideFecha = isAfter(fechaEvento, todayStart) || isEqual(fechaEvento, todayStart);
+      } else {
+        coincideFecha = true;
       }
     }
 
