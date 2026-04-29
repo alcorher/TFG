@@ -5,6 +5,21 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
+
+
+export function formatDateES(dateValue, options = {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+}) {
+  if (!dateValue) return "";
+
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return String(dateValue);
+
+  return date.toLocaleDateString("es-ES", options);
+}
+
 export function getFriendlyErrorMessage(errorData, fallback = "Ha ocurrido un error.") {
   if (!errorData) return fallback;
 

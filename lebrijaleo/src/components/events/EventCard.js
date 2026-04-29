@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MdCalendarToday, MdLocationOn, MdFavorite } from "react-icons/md";
+import { formatDateES } from "@/lib/utils";
 
 export default function EventCard({ evento }) {
   const isFree = evento.precio === 'Gratis' || Number(evento.precio) === 0;
@@ -33,7 +34,7 @@ export default function EventCard({ evento }) {
           {/* Fecha */}
           <div className="flex items-center gap-2 text-xs font-medium text-slate-500 mb-2">
             <MdCalendarToday className="text-base" />
-            <span>{evento.fecha_formateada || evento.fecha}</span>
+            <span>{formatDateES(evento.fecha_formateada || evento.fecha)}</span>
           </div>
           
           {/* Título */}

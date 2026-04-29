@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Navbar';
 import { createClient } from '@/utils/supabase/client';
+import { formatDateES } from '@/lib/utils';
 import { 
   MdMenu, MdPersonSearch, MdSearch, MdClose,
   MdPersonAdd, MdPersonRemove, MdGroup, MdPersonOff,
@@ -251,17 +252,11 @@ export default function MisAmigosPage() {
 
   const getAvatar = (user) => user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nombre || 'U')}&background=F6EBC8&color=1e293b`;
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Hoy';
-    if (diffDays === 1) return 'Ayer';
-    if (diffDays < 30) return `Hace ${diffDays} días`;
-    if (diffDays < 365) return `Hace ${Math.floor(diffDays / 30)} meses`;
-    return `Desde ${date.getFullYear()}`;
-  };
+  const formatDate = (dateStr) => formatDateES(dateStr, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 
   // Loading
   if (isLoading) {
