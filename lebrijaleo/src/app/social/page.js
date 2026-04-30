@@ -275,9 +275,6 @@ export default function MisAmigosPage() {
         {/* HEADER */}
         <header className="h-20 px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-nimbus-cloud/40">
           <div className="flex items-center gap-4 flex-1">
-            <button className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors lg:hidden">
-              <MdMenu className="text-2xl" />
-            </button>
             <div className="flex flex-col">
               <h1 className="text-xl font-bold text-midnight-blue">Mis Amigos</h1>
               <p className="text-xs text-midnight-blue/60 font-medium">Gestiona tus conexiones en Lebrija</p>

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { 
-  MdDashboard, MdFavorite, MdGroups, MdAddCircle, MdCalendarMonth, MdSettings, MdGroup 
+  MdDashboard, MdFavorite, MdGroups, MdAddCircle, MdCalendarMonth, MdSettings, MdGroup, MdMenu, MdClose
 } from "react-icons/md";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -16,6 +16,7 @@ export default function Navbar() {
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [userName, setUserName] = useState('');
   const [role, setRole] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     async function loadAvatar() {
@@ -43,6 +44,10 @@ export default function Navbar() {
     loadAvatar();
   }, []);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
   const defaultAvatar = "https://ui-avatars.com/api/?name=" + encodeURIComponent(userName || 'U') + "&background=F6EBC8&color=1e293b&size=96";
   const isAdmin = role === 'Administrador';
   const isOrganizer = role === 'Empresario';
@@ -65,8 +70,27 @@ export default function Navbar() {
   };
 
   return (
-    <aside className="w-20 bg-white border-r border-slate-100 flex flex-col items-center py-4 h-full shadow-sm z-20 shrink-0">
-      
+    <>
+      <button
+        type="button"
+        onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+        className={`md:hidden fixed top-4 z-[70] p-2 rounded-xl bg-white border border-slate-200 shadow-sm text-midnight-blue transition-all duration-300 ${isMobileMenuOpen ? 'left-24' : 'left-4'}`}
+        aria-label={isMobileMenuOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
+        aria-expanded={isMobileMenuOpen}
+      >
+        {isMobileMenuOpen ? <MdClose className="text-2xl" /> : <MdMenu className="text-2xl" />}
+      </button>
+
+      {isMobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-midnight-blue/50 z-[55]"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside className={`w-20 bg-white border-r border-slate-100 flex flex-col items-center py-4 h-full shadow-sm z-[60] shrink-0 fixed top-0 left-0 transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+
       {/* Logo (Lleva a la Home) */}
       <Link href="/" className="mb-4 shrink-0 w-12 h-12 rounded-xl flex items-center justify-center hover:scale-105 transition-transform overflow-hidden">
         <Image src="/logo.png" alt="LebriJaleo" width={55} height={55} className="object-contain" priority />
@@ -129,6 +153,7 @@ export default function Navbar() {
           />
         </Link>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

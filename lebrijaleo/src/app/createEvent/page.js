@@ -206,9 +206,7 @@ export default function CreateEventPage() {
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-form-bg relative">
         <header className="h-20 px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-nimbus-cloud/50">
           <div className="flex items-center gap-4 flex-1">
-            <button className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors">
-              <MdMenu className="text-2xl" />
-            </button>
+           
 
             <h1 className="text-xl font-bold text-midnight-blue">
               Publicar nuevo evento

@@ -202,9 +202,7 @@ export default function HomePage() {
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-form-bg relative">
         <header className="h-20 px-4 md:px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-nimbus-cloud/30">
           <div className="flex items-center gap-2 md:gap-4 flex-1">
-            <button className="p-2 text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/50 rounded-lg transition-colors md:hidden">
-              <MdMenu className="text-2xl" />
-            </button>
+           
             <div className="relative max-w-md w-full hidden sm:block">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-nimbus-cloud pointer-events-none">
                 <MdSearch className="text-xl" />
