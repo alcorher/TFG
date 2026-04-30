@@ -5,26 +5,31 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#C1A866';
-const tintColorDark = '#F6EBC8';
+// constants/theme.js
 
-export const Colors = {
-  light: {
-    text: '#221610',
-    background: '#F8F6F5',
-    tint: tintColorLight,
-    icon: '#64748B',
-    tabIconDefault: '#64748B',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#F0EEE9',
-    background: '#0F172A',
-    tint: tintColorDark,
-    icon: '#D5D5D8',
-    tabIconDefault: '#D5D5D8',
-    tabIconSelected: tintColorDark,
-  },
+export const COLORS = {
+  // Paleta Oficial LebriJaleo
+  lemonIcing: '#F6EBC8',
+  cloudDancer: '#f0eee9', // bg-background
+  midnightBlue: '#0f172a', // text-foreground (usando el @theme principal)
+  nimbusCloud: '#D5D5D8',
+  formBg: '#F0EEE9',
+  
+  // Variantes y acentos (Shadcn y utilities)
+  lemonIcingAccent: '#C1A866', // ring
+  lemonIcingDark: '#A38C52',
+  borderDark: '#DBCDA3', // borde de shadcn
+  midnightBlueDark: '#221610', // foreground de shadcn
+  
+  // Neutros y estados (para replicar clases de Tailwind base)
+  white: '#ffffff',
+  slate400: '#94a3b8',
+  slate500: '#64748b',
+  slate600: '#475569',
+  red500: '#ef4444', // destructive aproximado
+  
+  // Transparencias (útiles para modales)
+  overlay: 'rgba(15, 23, 42, 0.5)', // midnightBlue con 50% de opacidad
 };
 
 export const Fonts = Platform.select({
