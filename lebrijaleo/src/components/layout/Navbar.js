@@ -65,15 +65,15 @@ export default function Navbar() {
   };
 
   return (
-    <aside className="w-20 bg-white border-r border-slate-100 flex flex-col items-center py-6 h-full shadow-sm z-20 shrink-0">
+    <aside className="w-20 bg-white border-r border-slate-100 flex flex-col items-center py-4 h-full shadow-sm z-20 shrink-0">
       
       {/* Logo (Lleva a la Home) */}
-      <Link href="/" className="mb-10 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shadow-lemon-icing/30 hover:scale-105 transition-transform overflow-hidden bg-white border border-lemon-icing/30">
-        <Image src="/logo.png" alt="LebriJaleo" width={48} height={48} className="object-contain" priority />
+      <Link href="/" className="mb-4 shrink-0 w-12 h-12 rounded-xl flex items-center justify-center hover:scale-105 transition-transform overflow-hidden">
+        <Image src="/logo.png" alt="LebriJaleo" width={55} height={55} className="object-contain" priority />
       </Link>
       
       {/* Navegación Principal */}
-      <nav className="flex-1 flex flex-col gap-6 w-full px-2">
+      <nav className="flex-1 min-h-0 flex flex-col gap-1 w-full px-2 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <Link href="/home" className={getNavItemClasses('/home')}>
           <MdDashboard className="text-3xl" />
           <span className="absolute left-16 bg-midnight-blue text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">Cartelera</span>
@@ -120,7 +120,7 @@ export default function Navbar() {
       </nav>
       
       {/* Avatar del usuario (Lleva al perfil) */}
-      <div className="mt-4 px-2 pb-2">
+      <div className="mt-2 px-2 pb-2 shrink-0">
         <Link href="/profile" className="block w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md hover:ring-2 hover:ring-lemon-icing transition-all">
           <img 
             alt="User avatar" 

@@ -179,13 +179,16 @@ export default function HomePage() {
             <MdStorefront className="text-xl" />
           </div>
           <div>
-            <h4 className="font-bold text-lg leading-tight mb-1 text-midnight-blue">¿Eres empresario?</h4>
+            <h4 className="font-bold text-lg leading-tight mb-1 text-midnight-blue">¿Eres organizador?</h4>
             <p className="text-slate-600 text-sm leading-snug">Publica tus eventos y llega a toda Lebrija en minutos.</p>
           </div>
-          <button className="w-full py-2.5 bg-midnight-blue text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 group shadow-lg">
+          <a
+            href="mailto:acorher2911@g.educaand.es?subject=Solicitud de cuenta de Organizador en LebriJaleo&body=Hola, me gustaría solicitar el rol de organizador para publicar eventos, mi nombre de usuario es [tu_nombre_de_usuario], me dedico a eventos de [tipo de eventos]."
+            className="w-full py-2.5 bg-midnight-blue text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 group shadow-lg hover:bg-black"
+          >
             <span>Empezar ahora</span>
             <MdArrowForward className="text-base group-hover:translate-x-1 transition-transform" />
-          </button>
+          </a>
         </div>
       </div>
     </>
