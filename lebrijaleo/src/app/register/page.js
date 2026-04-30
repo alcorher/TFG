@@ -1,6 +1,7 @@
 import Link from "next/link";
 // Importamos el icono del logo para la cabecera
 import { MdFestival } from "react-icons/md";
+import Image from "next/image";
 import RegisterForm from "@/components/auth/RegisterForm";
 
 export const metadata = {
@@ -23,8 +24,14 @@ export default function RegisterPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
         <div className="relative z-10 flex flex-col justify-between p-12 w-full h-full">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-lemon-icing/20 backdrop-blur-md flex items-center justify-center border border-lemon-icing/30 text-white">
-              <MdFestival className="text-2xl text-lemon-icing" />
+            <div className="bg-white flex items-center justify-center rounded-lg ">
+              <Image
+                src="/logo.png"
+                alt="Lebrijaleo Logo"
+                width={40}
+                height={40}
+                className="object-contain h-10 w-10 m-1" 
+              />
             </div>
             <span className="text-2xl font-bold text-white tracking-tight">
               Lebrijaleo
@@ -50,7 +57,13 @@ export default function RegisterPage() {
         <div className="w-full max-w-[480px] px-8 py-8 flex flex-col gap-6">
           {/* Móvil */}
           <div className="lg:hidden flex items-center gap-2 mb-4">
-            <MdFestival className="text-3xl text-lemon-icing" />
+            <Image
+              src="/logo.png"
+              alt="Lebrijaleo Logo"
+              width={40}
+              height={40}
+              className="object-contain h-10 w-10 rounded-lg bg-white p-1"
+            />
             <span className="text-2xl font-bold text-midnight-blue">
               Lebrijaleo
             </span>
