@@ -10,6 +10,7 @@ import {
   MdNotifications,
   MdLogout,
   MdSupportAgent,
+  MdArrowForward,
   MdMenu,
   MdClose,
 } from "react-icons/md";
@@ -57,22 +58,23 @@ export default function EditProfilePage() {
           </button>
         </div>
 
-        <div className="mt-auto">
-          <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-lemon-icing/50 text-midnight-blue flex items-center justify-center">
-                <MdSupportAgent className="text-xl" />
-              </div>
-              <h4 className="font-bold text-midnight-blue">
-                ¿Necesitas ayuda?
-              </h4>
+        <div className="mt-auto bg-nimbus-cloud rounded-2xl p-6 relative overflow-hidden text-midnight-blue border border-nimbus-cloud/50">
+          <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/50 rounded-full blur-2xl"></div>
+          <div className="relative z-10 flex flex-col gap-4">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-midnight-blue mb-1 shadow-sm">
+              <MdSupportAgent className="text-xl" />
             </div>
-            <p className="text-sm text-slate-500 mb-4">
-              Contacta con soporte si tienes problemas con tu perfil.
-            </p>
-            <button className="text-sm font-bold text-slate-700 hover:text-midnight-blue hover:underline">
-              Ir al centro de ayuda
-            </button>
+            <div>
+              <h4 className="font-bold text-lg leading-tight mb-1 text-midnight-blue">¿Necesitas ayuda?</h4>
+              <p className="text-slate-600 text-sm leading-snug">Contacta con soporte si tienes problemas con tu perfil.</p>
+            </div>
+            <a
+              href="mailto:acorher2911@g.educaand.es?subject=Soporte LebriJaleo&body=Hola, necesito ayuda con mi perfil en LebriJaleo."
+              className="w-full py-2.5 bg-midnight-blue text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 group shadow-lg hover:bg-black"
+            >
+              <span>Contactar soporte</span>
+              <MdArrowForward className="text-base group-hover:translate-x-1 transition-transform" />
+            </a>
           </div>
         </div>
 
@@ -127,16 +129,23 @@ export default function EditProfilePage() {
             </button>
           </div>
 
-          <div className="mt-auto">
-            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-lemon-icing/50 text-midnight-blue flex items-center justify-center">
-                  <MdSupportAgent className="text-xl" />
-                </div>
-                <h4 className="font-bold text-midnight-blue">¿Necesitas ayuda?</h4>
+          <div className="mt-auto bg-nimbus-cloud rounded-2xl p-6 relative overflow-hidden text-midnight-blue border border-nimbus-cloud/50">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/50 rounded-full blur-2xl"></div>
+            <div className="relative z-10 flex flex-col gap-4">
+              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-midnight-blue mb-1 shadow-sm">
+                <MdSupportAgent className="text-xl" />
               </div>
-              <p className="text-sm text-slate-500 mb-4">Contacta con soporte si tienes problemas con tu perfil.</p>
-              <button className="text-sm font-bold text-slate-700 hover:text-midnight-blue hover:underline">Ir al centro de ayuda</button>
+              <div>
+                <h4 className="font-bold text-lg leading-tight mb-1 text-midnight-blue">¿Necesitas ayuda?</h4>
+                <p className="text-slate-600 text-sm leading-snug">Contacta con soporte si tienes problemas con tu perfil.</p>
+              </div>
+              <a
+                href="mailto:acorher2911@g.educaand.es?subject=Soporte LebriJaleo&body=Hola, necesito ayuda con mi perfil en LebriJaleo."
+                className="w-full py-2.5 bg-midnight-blue text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 group shadow-lg hover:bg-black"
+              >
+                <span>Contactar soporte</span>
+                <MdArrowForward className="text-base group-hover:translate-x-1 transition-transform" />
+              </a>
             </div>
           </div>
         </aside>

@@ -7,6 +7,10 @@ import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "lucide-react"
 
+const defaultLocale = {
+  code: "es-ES",
+}
+
 function Calendar({
   className,
   classNames,
@@ -30,10 +34,10 @@ function Calendar({
         className
       )}
       captionLayout={captionLayout}
-      locale={locale}
+      locale={locale || defaultLocale}
       formatters={{
         formatMonthDropdown: (date) =>
-          date.toLocaleString(locale?.code, { month: "short" }),
+          date.toLocaleString((locale || defaultLocale).code, { month: "short" }),
         ...formatters,
       }}
       classNames={{
@@ -123,7 +127,7 @@ function Calendar({
           return (<ChevronDownIcon className={cn("size-4", className)} {...props} />);
         },
         DayButton: ({ ...props }) => (
-          <CalendarDayButton locale={locale} {...props} />
+          <CalendarDayButton locale={locale || defaultLocale} {...props} />
         ),
         WeekNumber: ({ children, ...props }) => {
           return (
@@ -160,7 +164,7 @@ function CalendarDayButton({
       ref={ref}
       variant="ghost"
       size="icon"
-      data-day={day.date.toLocaleDateString(locale?.code)}
+      data-day={day.date.toLocaleDateString(locale?.code || defaultLocale.code)}
       data-selected-single={
         modifiers.selected &&
         !modifiers.range_start &&

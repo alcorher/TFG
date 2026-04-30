@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 import Sidebar from "@/components/layout/Navbar";
+import { Alert } from "@/components/ui/alert";
 
 import { createClient } from "@/utils/supabase/client";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 // Importamos todos los iconos necesarios desde react-icons
 
@@ -36,6 +39,7 @@ const AVAILABLE_CATEGORIES = [
 ];
 
 export default function CreateEventPage() {
+  const router = useRouter();
   const supabase = createClient();
   const fileInputRef = useRef(null);
 
@@ -53,6 +57,9 @@ export default function CreateEventPage() {
 
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertType, setAlertType] = useState("info");
+  const minDateTime = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
   const handleInputChange = (e) => {
     const { id, value, type, checked } = e.target;
@@ -103,8 +110,8 @@ export default function CreateEventPage() {
     e.preventDefault();
 
     if (!imageFile) {
-      alert("Por favor, sube una imagen de portada para tu evento.");
-
+      setAlertMessage("Por favor, sube una imagen de portada para tu evento.");
+      setAlertType("warning");
       return;
     }
 
@@ -119,8 +126,27 @@ export default function CreateEventPage() {
     const token = session?.access_token;
 
     if (!token) {
-      alert("Debes iniciar sesión para publicar un evento.");
+      setAlertMessage("Debes iniciar sesión para publicar un evento.");
+      setAlertType("error");
+      return;
+    }
 
+    if (!formData.date) {
+      setAlertMessage("Selecciona una fecha y hora para el evento.");
+      setAlertType("warning");
+      return;
+    }
+
+    const selectedDate = new Date(formData.date);
+    if (Number.isNaN(selectedDate.getTime())) {
+      setAlertMessage("La fecha seleccionada no es válida.");
+      setAlertType("error");
+      return;
+    }
+
+    if (selectedDate < new Date()) {
+      setAlertMessage("No puedes crear eventos con una fecha ya pasada.");
+      setAlertType("warning");
       return;
     }
 
@@ -151,14 +177,25 @@ export default function CreateEventPage() {
       if (response.ok) {
         const result = await response.json();
 
-        alert("¡Evento publicado con éxito en LebriJaleo!");
+        setAlertMessage("¡Evento publicado con éxito en LebriJaleo!");
+        setAlertType("success");
+        const createdEvent = Array.isArray(result.data) ? result.data[0] : result.data;
+        setTimeout(() => {
+          if (createdEvent?.id_evento) {
+            router.push(`/event/${createdEvent.id_evento}`);
+          } else {
+            router.push("/myEvents");
+          }
+        }, 1500);
       } else {
-        const errorData = await response.json();
-
-        alert(`Error al publicar: ${errorData.detail || "Fallo desconocido"}`);
+        const errorData = await response.json().catch(() => ({}));
+        setAlertMessage(getFriendlyErrorMessage(errorData, "No se ha podido publicar el evento. Revisa los campos e inténtalo de nuevo."));
+        setAlertType("error");
       }
     } catch (error) {
       console.error("Error de conexión:", error);
+      setAlertMessage("No se ha podido conectar con el servidor para publicar el evento.");
+      setAlertType("error");
     }
   };
 
@@ -169,9 +206,7 @@ export default function CreateEventPage() {
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-form-bg relative">
         <header className="h-20 px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-nimbus-cloud/50">
           <div className="flex items-center gap-4 flex-1">
-            <button className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors">
-              <MdMenu className="text-2xl" />
-            </button>
+           
 
             <h1 className="text-xl font-bold text-midnight-blue">
               Publicar nuevo evento
@@ -181,6 +216,15 @@ export default function CreateEventPage() {
 
         <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
           <div className="max-w-4xl mx-auto">
+            {alertMessage && (
+              <div className="mb-6">
+                <Alert
+                  message={alertMessage}
+                  type={alertType}
+                  onClose={() => setAlertMessage(null)}
+                />
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* SECCIÓN 1: Información básica */}
 
@@ -273,6 +317,7 @@ export default function CreateEventPage() {
                             id="event-date"
                             type="datetime-local"
                             required
+                            min={minDateTime}
                             value={formData.date}
                             onChange={handleInputChange}
                             className="w-full pl-11 pr-4 py-3 bg-white border border-nimbus-cloud rounded-xl text-midnight-blue focus:ring-2 focus:ring-lemon-icing/80 focus:border-lemon-icing transition-all placeholder:text-midnight-blue/40"

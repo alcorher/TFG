@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import { getFriendlyErrorMessage } from '@/lib/utils';
+import { Alert } from '@/components/ui/alert';
 import { 
   MdArrowBack, MdMenu, MdPhotoCamera, MdEdit, MdPerson, 
   MdAlternateEmail, MdLocationOn, MdExpandMore, MdSave 
@@ -18,6 +20,8 @@ export default function EditProfileForm({ onOpenMobilePanel }) {
   const [isFetching, setIsFetching] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertType, setAlertType] = useState("info");
 
   const avatarInputRef = useRef(null);
   const bannerInputRef = useRef(null);
@@ -133,7 +137,8 @@ export default function EditProfileForm({ onOpenMobilePanel }) {
       }));
 
     } catch (error) {
-      alert("Error al subir la imagen: " + error.message);
+      setAlertMessage("Error al subir la imagen: " + error.message);
+      setAlertType("error");
     } finally {
       setIsUploading(false);
     }
@@ -170,13 +175,16 @@ export default function EditProfileForm({ onOpenMobilePanel }) {
                 banner_url: updatedData.banner_url || ''
             });
         }
-        alert("¡Perfil guardado correctamente!");
+        setAlertMessage("¡Perfil guardado correctamente!");
+        setAlertType("success");
       } else {
-        const errorData = await response.json();
-        alert(`Error al guardar: ${errorData.detail}`);
+        const errorData = await response.json().catch(() => ({}));
+        setAlertMessage(getFriendlyErrorMessage(errorData, "No se ha podido guardar el perfil. Revisa los campos e inténtalo de nuevo."));
+        setAlertType("error");
       }
     } catch (error) {
-      alert("Error de conexión con el servidor.");
+      setAlertMessage("No se ha podido conectar con el servidor para guardar el perfil.");
+      setAlertType("error");
     } finally {
       setIsLoading(false);
     }
@@ -215,6 +223,15 @@ export default function EditProfileForm({ onOpenMobilePanel }) {
       </header>
 
       <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {alertMessage && (
+          <div className="max-w-7xl mx-auto px-8 pt-8 pb-2">
+            <Alert
+              message={alertMessage}
+              type={alertType}
+              onClose={() => setAlertMessage(null)}
+            />
+          </div>
+        )}
         
         <input type="file" accept="image/*" ref={bannerInputRef} onChange={(e) => handleImageUpload(e, 'banner')} className="hidden" />
         <input type="file" accept="image/*" ref={avatarInputRef} onChange={(e) => handleImageUpload(e, 'avatar')} className="hidden" />
@@ -222,7 +239,7 @@ export default function EditProfileForm({ onOpenMobilePanel }) {
         <div className="relative w-full h-80 group">
           <div className="absolute inset-0 bg-midnight-blue">
             <img alt="Banner LebriJaleo" className="w-full h-full object-cover opacity-80" src={formData.banner_url || defaultBanner} />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+            <div className="absolute inset-0 bg-linear-to-t from-black/70 to-transparent"></div>
           </div>
           
           <div className="absolute top-4 right-4 z-20">
@@ -296,7 +313,7 @@ export default function EditProfileForm({ onOpenMobilePanel }) {
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-midnight-blue">Biografía</label>
                 <div className="relative">
-                  <textarea id="biografia" name="biografia" value={formData.biografia} onChange={handleChange} maxLength={160} className="block w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-midnight-blue text-sm focus:ring-2 focus:ring-lemon-icing focus:border-transparent transition-all min-h-[120px] resize-y" />
+                  <textarea id="biografia" name="biografia" value={formData.biografia} onChange={handleChange} maxLength={160} className="block w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-midnight-blue text-sm focus:ring-2 focus:ring-lemon-icing focus:border-transparent transition-all min-h-30 resize-y" />
                   <div className="absolute bottom-3 right-3 text-xs text-slate-400 pointer-events-none">{formData.biografia.length}/160</div>
                 </div>
               </div>

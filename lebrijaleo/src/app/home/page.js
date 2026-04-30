@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/layout/Navbar'; // Asegúrate de que esta ruta es la correcta en tu proyecto
 import EventCard from '@/components/events/EventCard';
 import { DateRangePicker } from '@/components/events/DateRangePicker';
-import { isWithinInterval, parseISO } from 'date-fns';
+import { isWithinInterval, parseISO, startOfDay, endOfDay, isAfter, isEqual } from 'date-fns';
 import { 
   MdSearch, MdFilterList, MdSpaceDashboard, MdGridView, MdViewList, 
   MdClose, MdStorefront, MdArrowForward, MdMenu, MdCheck
@@ -41,6 +41,27 @@ export default function HomePage() {
         if (response.ok) {
           const result = await response.json();
           setEventos(result.data);
+
+          // Si no hay un rango de fecha activo, establecer un rango por defecto
+          // desde hoy hasta la fecha del noveno evento siguiente (o el último disponible)
+          try {
+            const eventosData = result.data || [];
+            const todayStart = startOfDay(new Date());
+            const futureEvents = eventosData
+              .filter(e => e.fecha)
+              .map(e => ({ ...e, _fechaDate: parseISO(e.fecha) }))
+              .filter(e => isAfter(e._fechaDate, todayStart) || isEqual(e._fechaDate, todayStart))
+              .sort((a, b) => a._fechaDate - b._fechaDate);
+
+            if ((!dateRange?.from || !dateRange?.to) && futureEvents.length > 0) {
+              const idx = Math.min(8, futureEvents.length - 1);
+              const toDate = endOfDay(futureEvents[idx]._fechaDate);
+              setDateRange({ from: todayStart, to: toDate });
+            }
+          } catch (err) {
+            // Silenciar errores no críticos de cálculo de rango
+            console.error('Error calculando rango de fecha por defecto:', err);
+          }
         } else {
           console.error("Error al obtener eventos");
         }
@@ -96,15 +117,24 @@ export default function HomePage() {
       activeFilters.includes(evento.categoria);
 
     let coincideFecha = true;
-    if (dateRange?.from && dateRange?.to && evento.fecha) {
-      const fechaEvento = parseISO(evento.fecha);
+    const fechaEvento = evento.fecha ? parseISO(evento.fecha) : null;
+
+    if (dateRange?.from && dateRange?.to && fechaEvento) {
       try {
         coincideFecha = isWithinInterval(fechaEvento, {
           start: dateRange.from,
           end: dateRange.to,
         });
       } catch (error) {
-        coincideFecha = true; 
+        coincideFecha = true;
+      }
+    } else {
+      // Si NO hay filtros de fecha activos, no mostrar eventos pasados
+      if (fechaEvento) {
+        const todayStart = startOfDay(new Date());
+        coincideFecha = isAfter(fechaEvento, todayStart) || isEqual(fechaEvento, todayStart);
+      } else {
+        coincideFecha = true;
       }
     }
 
@@ -149,13 +179,16 @@ export default function HomePage() {
             <MdStorefront className="text-xl" />
           </div>
           <div>
-            <h4 className="font-bold text-lg leading-tight mb-1 text-midnight-blue">¿Eres empresario?</h4>
+            <h4 className="font-bold text-lg leading-tight mb-1 text-midnight-blue">¿Eres organizador?</h4>
             <p className="text-slate-600 text-sm leading-snug">Publica tus eventos y llega a toda Lebrija en minutos.</p>
           </div>
-          <button className="w-full py-2.5 bg-midnight-blue text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 group shadow-lg">
+          <a
+            href="mailto:acorher2911@g.educaand.es?subject=Solicitud de cuenta de Organizador en LebriJaleo&body=Hola, me gustaría solicitar el rol de organizador para publicar eventos, mi nombre de usuario es [tu_nombre_de_usuario], me dedico a eventos de [tipo de eventos]."
+            className="w-full py-2.5 bg-midnight-blue text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 group shadow-lg hover:bg-black"
+          >
             <span>Empezar ahora</span>
             <MdArrowForward className="text-base group-hover:translate-x-1 transition-transform" />
-          </button>
+          </a>
         </div>
       </div>
     </>
@@ -169,9 +202,7 @@ export default function HomePage() {
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-form-bg relative">
         <header className="h-20 px-4 md:px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-nimbus-cloud/30">
           <div className="flex items-center gap-2 md:gap-4 flex-1">
-            <button className="p-2 text-slate-400 hover:text-midnight-blue hover:bg-lemon-icing/50 rounded-lg transition-colors md:hidden">
-              <MdMenu className="text-2xl" />
-            </button>
+           
             <div className="relative max-w-md w-full hidden sm:block">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-nimbus-cloud pointer-events-none">
                 <MdSearch className="text-xl" />

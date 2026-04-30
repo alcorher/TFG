@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
 from dotenv import load_dotenv
-from datetime import date, time
+from datetime import date, time, datetime
 from typing import Optional
 import uuid 
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Header, FastAPI
@@ -55,6 +55,18 @@ class EventoCreate(BaseModel):
     categoria: str
     aforo_max: Optional[int] = None
     estado: str = 'Publicado'  # Cambia 'Publicado' por la palabra exacta de tu ENUM que arreglaste antes
+
+
+def validar_fecha_evento(fecha_str: str):
+    try:
+        fecha_evento = datetime.fromisoformat(fecha_str)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de fecha inválido")
+
+    if fecha_evento < datetime.now():
+        raise HTTPException(status_code=400, detail="No puedes crear o actualizar eventos con una fecha pasada")
+
+    return fecha_evento
 
 # --- Valida el Token de Next.js ---
 def get_current_user(authorization: str = Header(None)):
@@ -284,6 +296,8 @@ async def crear_evento(
         user_response = supabase.auth.get_user(token)
         usuario_id = user_response.user.id
 
+        validar_fecha_evento(date)
+
         # ... (Tu código de subida de imagen a Storage se queda igual) ...
         extension = banner.filename.split(".")[-1]
         nombre_archivo = f"carteles/{uuid.uuid4()}.{extension}"
@@ -337,13 +351,33 @@ async def obtener_evento(evento_id: str):
         
         # Obtenemos también el campo creado_por del empresario propietario
         try:
-            user_response = supabase.table("usuarios").select("creado_por").eq("id_usuario", evento["id_empresario"]).execute()
+            user_response = supabase.table("usuarios").select("nombre, username, creado_por, avatar_url").eq("id_usuario", evento["id_empresario"]).execute()
             if user_response.data and len(user_response.data) > 0:
-                evento["empresario_creado_por"] = user_response.data[0].get("creado_por")
+                usuario_evento = user_response.data[0]
+                evento["organizador_nombre"] = usuario_evento.get("nombre")
+                evento["organizador_username"] = usuario_evento.get("username")
+                evento["organizador_avatar"] = usuario_evento.get("avatar_url")
+                evento["empresario_creado_por"] = usuario_evento.get("creado_por")
+
+                creador_id = usuario_evento.get("creado_por")
+                if creador_id:
+                    creador_response = supabase.table("usuarios").select("nombre, username").eq("id_usuario", creador_id).execute()
+                    if creador_response.data and len(creador_response.data) > 0:
+                        evento["creador_nombre"] = creador_response.data[0].get("nombre")
+                        evento["creador_username"] = creador_response.data[0].get("username")
+                    else:
+                        evento["creador_nombre"] = None
+                        evento["creador_username"] = None
             else:
+                evento["organizador_nombre"] = None
+                evento["organizador_username"] = None
                 evento["empresario_creado_por"] = None
         except Exception:
+            evento["organizador_nombre"] = None
+            evento["organizador_username"] = None
             evento["empresario_creado_por"] = None
+            evento["creador_nombre"] = None
+            evento["creador_username"] = None
             
         # Devolvemos el primer (y único) evento encontrado
         return evento
@@ -396,6 +430,8 @@ async def actualizar_evento(
         if usuario_id != id_empresario and usuario_id != creado_por:
             raise HTTPException(status_code=403, detail="No tienes permisos para editar este evento")
 
+        validar_fecha_evento(date)
+
         # 4. Preparar la actualización
         # Format the datetime correctly. Sometimes HTML date inputs give YYYY-MM-DDTHH:MM
         if "T" in date:
@@ -442,6 +478,35 @@ async def actualizar_evento(
     except Exception as e:
         print(f"Error al actualizar evento {evento_id}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/api/eventos/{evento_id}")
+def eliminar_evento(evento_id: str, current_user = Depends(get_current_user)):
+    try:
+        evento_response = supabase.table("eventos").select("id_empresario").eq("id_evento", evento_id).single().execute()
+        if not evento_response.data:
+            raise HTTPException(status_code=404, detail="Evento no encontrado")
+
+        id_empresario = evento_response.data.get("id_empresario")
+        creado_por = None
+
+        try:
+            usr_response = supabase.table("usuarios").select("creado_por").eq("id_usuario", id_empresario).single().execute()
+            if usr_response.data:
+                creado_por = usr_response.data.get("creado_por")
+        except Exception:
+            pass
+
+        if current_user.id != id_empresario and current_user.id != creado_por:
+            raise HTTPException(status_code=403, detail="No tienes permisos para eliminar este evento")
+
+        supabase.table("favoritos").delete().eq("id_evento", evento_id).execute()
+        supabase.table("eventos").delete().eq("id_evento", evento_id).execute()
+
+        return {"mensaje": "Evento eliminado con éxito"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al eliminar el evento: {str(e)}")
 
 @app.get("/api/eventos/{evento_id}/favoritos")
 async def obtener_favoritos(evento_id: str, authorization: str = Header(None)):

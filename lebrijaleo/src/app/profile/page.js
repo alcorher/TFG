@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Navbar';
+import { Alert } from '@/components/ui/alert';
 import EventCard from '@/components/events/EventCard';
 import { createClient } from '@/utils/supabase/client';
 import { 
@@ -27,6 +28,8 @@ export default function ProfilePage() {
   const [showMobilePanel, setShowMobilePanel] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
   const [statsLoading, setStatsLoading] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertType, setAlertType] = useState("info");
 
   useEffect(() => {
     async function loadProfileAndData() {
@@ -111,7 +114,8 @@ export default function ProfilePage() {
       downloadTxt(txt, `estadisticas_${safeName}.txt`);
     } catch (err) {
       console.error('Error descargando estadísticas:', err);
-      alert('No se pudieron descargar las estadísticas.');
+      setAlertMessage('No se pudieron descargar las estadísticas.');
+      setAlertType('error');
     } finally {
       setStatsLoading(false);
     }
@@ -160,6 +164,18 @@ export default function ProfilePage() {
         </header>
 
         <div className="flex-1 overflow-y-auto no-scrollbar">
+          {alertMessage && (
+            <div className="px-8 pt-8 pb-2 sticky top-0 z-10 bg-form-bg">
+              <div className="max-w-7xl mx-auto">
+                <Alert
+                  message={alertMessage}
+                  type={alertType}
+                  onClose={() => setAlertMessage(null)}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Cabecera del Perfil */}
           <div className="relative w-full h-80">
             <div className="absolute inset-0 bg-midnight-blue">

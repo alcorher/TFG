@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import Sidebar from "@/components/layout/Navbar";
+import { Alert } from "@/components/ui/alert";
 import {
   MdArrowBack,
   MdShare,
@@ -28,6 +29,7 @@ export default function EventDetailPage({ params }) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [currentUser, setCurrentUser] = useState(null);
+  const [deleteMessage, setDeleteMessage] = useState("");
 
   // --- NUEVOS ESTADOS PARA LA CONEXIÓN ---
   const [eventData, setEventData] = useState(null);
@@ -122,6 +124,41 @@ export default function EventDetailPage({ params }) {
       console.error("Error toggling favorite:", err);
     } finally {
       setIsTogglingFav(false);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!eventData) return;
+
+    const confirmed = window.confirm("¿Seguro que quieres eliminar este evento? Esta acción no se puede deshacer.");
+    if (!confirmed) return;
+
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/api/eventos/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        router.push("/myEvents");
+        return;
+      }
+
+      const errorData = await response.json().catch(() => ({}));
+      setDeleteMessage(errorData.detail || "No se ha podido eliminar el evento.");
+    } catch (err) {
+      console.error("Error deleting event:", err);
+      setDeleteMessage("No se ha podido conectar con el servidor para eliminar el evento.");
     }
   };
 
@@ -283,15 +320,43 @@ export default function EventDetailPage({ params }) {
                   </span>
                   {/* Destacado dinámico (Opcional, podrías añadir un boolean en DB para esto) */}
                 </div>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight mb-2">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight mb-4">
                   {eventData.nombre}
                 </h1>
-                <div className="flex items-center gap-2 text-white/90">
-                  <MdVerified className="text-xl text-white" />
-                  <span className="text-base md:text-lg font-medium">
-                    Organizador Privado
-                  </span>
-                </div>
+
+                {/* Card del Organizador - Clickeable */}
+                <button
+                  onClick={() => router.push(`/profile/${eventData.id_empresario}`)}
+                  className="flex items-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/20 transition-all duration-300 group cursor-pointer"
+                >
+                  {/* Foto del Organizador */}
+                  <div className="relative flex-shrink-0">
+                    <img
+                      src={
+                        eventData.organizador_avatar ||
+                        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=2070&auto=format&fit=crop"
+                      }
+                      alt={eventData.organizador_nombre}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-white/30 group-hover:border-white/60 transition-all"
+                    />
+                    <div className="absolute -bottom-1 -right-1 bg-emerald-400 w-4 h-4 rounded-full border-2 border-white"></div>
+                  </div>
+
+                  {/* Info del Organizador */}
+                  <div className="text-left">
+                    <div className="flex items-center gap-1">
+                      <span className="text-white font-semibold text-base md:text-lg">
+                        {eventData.organizador_nombre || "Organizador"}
+                      </span>
+                      <MdVerified className="text-white text-lg" />
+                    </div>
+                    <p className="text-white/70 text-xs md:text-sm">
+                      {eventData.organizador_username ? `@${eventData.organizador_username}` : "Toca para ver perfil"}
+                    </p>
+                  </div>
+                </button>
+
+                
               </div>
             </div>
           </div>
@@ -357,6 +422,14 @@ export default function EventDetailPage({ params }) {
             </div>
 
             <div className="grid grid-cols-1 gap-8">
+              {deleteMessage && (
+                <Alert
+                  message={deleteMessage}
+                  type="error"
+                  onClose={() => setDeleteMessage("")}
+                />
+              )}
+
               {/* Sección Descripción */}
               <section className="bg-white rounded-[2rem] p-8 md:p-10 shadow-sm border border-nimbus-cloud/30">
                 <h2 className="text-2xl font-bold text-midnight-blue mb-6 flex items-center gap-2">
@@ -395,8 +468,10 @@ export default function EventDetailPage({ params }) {
       </main>
 
       {/* ASIDE DERECHO (Escritorio) */}
-      <aside className="w-[320px] bg-white border-l border-nimbus-cloud/40 p-6 flex flex-col gap-8 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto hidden xl:flex shrink-0">
-        {rightPanelContentJSX}
+      <aside className="hidden xl:block w-[320px] bg-white border-l border-nimbus-cloud/40 h-full shadow-[-2px_0_20px_rgba(0,0,0,0.02)] overflow-y-auto shrink-0">
+        <div className="flex h-full flex-col gap-8 p-6">
+          {rightPanelContentJSX}
+        </div>
       </aside>
 
       {/* OVERLAY PARA MÓVIL: Fondo oscuro cuando el panel está abierto */}

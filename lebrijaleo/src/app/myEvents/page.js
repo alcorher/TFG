@@ -63,9 +63,7 @@ export default function MisEventosPage() {
         {/* CABECERA TOP */}
         <header className="h-20 px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-nimbus-cloud/40">
           <div className="flex items-center gap-4 flex-1">
-            <button className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors xl:hidden">
-              <MdMenu className="text-2xl" />
-            </button>
+          
             <div className="relative max-w-md w-full hidden sm:block">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-midnight-blue/40 pointer-events-none">
                 <MdSearch className="text-xl" />

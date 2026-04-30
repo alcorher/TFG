@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Navbar';
 import { createClient } from '@/utils/supabase/client';
+import { formatDateES } from '@/lib/utils';
 import { 
   MdMenu, MdPersonSearch, MdSearch, MdClose,
   MdPersonAdd, MdPersonRemove, MdGroup, MdPersonOff,
@@ -251,17 +252,11 @@ export default function MisAmigosPage() {
 
   const getAvatar = (user) => user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nombre || 'U')}&background=F6EBC8&color=1e293b`;
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Hoy';
-    if (diffDays === 1) return 'Ayer';
-    if (diffDays < 30) return `Hace ${diffDays} días`;
-    if (diffDays < 365) return `Hace ${Math.floor(diffDays / 30)} meses`;
-    return `Desde ${date.getFullYear()}`;
-  };
+  const formatDate = (dateStr) => formatDateES(dateStr, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 
   // Loading
   if (isLoading) {
@@ -280,9 +275,6 @@ export default function MisAmigosPage() {
         {/* HEADER */}
         <header className="h-20 px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-nimbus-cloud/40">
           <div className="flex items-center gap-4 flex-1">
-            <button className="p-2 text-midnight-blue/50 hover:text-midnight-blue hover:bg-lemon-icing/40 rounded-lg transition-colors lg:hidden">
-              <MdMenu className="text-2xl" />
-            </button>
             <div className="flex flex-col">
               <h1 className="text-xl font-bold text-midnight-blue">Mis Amigos</h1>
               <p className="text-xs text-midnight-blue/60 font-medium">Gestiona tus conexiones en Lebrija</p>
