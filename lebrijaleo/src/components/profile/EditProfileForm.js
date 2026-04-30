@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { getFriendlyErrorMessage } from '@/lib/utils';
+import { Alert } from '@/components/ui/alert';
 import { 
   MdArrowBack, MdMenu, MdPhotoCamera, MdEdit, MdPerson, 
   MdAlternateEmail, MdLocationOn, MdExpandMore, MdSave 
@@ -19,6 +20,8 @@ export default function EditProfileForm({ onOpenMobilePanel }) {
   const [isFetching, setIsFetching] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertType, setAlertType] = useState("info");
 
   const avatarInputRef = useRef(null);
   const bannerInputRef = useRef(null);
@@ -134,7 +137,8 @@ export default function EditProfileForm({ onOpenMobilePanel }) {
       }));
 
     } catch (error) {
-      alert("Error al subir la imagen: " + error.message);
+      setAlertMessage("Error al subir la imagen: " + error.message);
+      setAlertType("error");
     } finally {
       setIsUploading(false);
     }
@@ -171,13 +175,16 @@ export default function EditProfileForm({ onOpenMobilePanel }) {
                 banner_url: updatedData.banner_url || ''
             });
         }
-        alert("¡Perfil guardado correctamente!");
+        setAlertMessage("¡Perfil guardado correctamente!");
+        setAlertType("success");
       } else {
         const errorData = await response.json().catch(() => ({}));
-        alert(getFriendlyErrorMessage(errorData, "No se ha podido guardar el perfil. Revisa los campos e inténtalo de nuevo."));
+        setAlertMessage(getFriendlyErrorMessage(errorData, "No se ha podido guardar el perfil. Revisa los campos e inténtalo de nuevo."));
+        setAlertType("error");
       }
     } catch (error) {
-      alert("No se ha podido conectar con el servidor para guardar el perfil.");
+      setAlertMessage("No se ha podido conectar con el servidor para guardar el perfil.");
+      setAlertType("error");
     } finally {
       setIsLoading(false);
     }
@@ -216,6 +223,15 @@ export default function EditProfileForm({ onOpenMobilePanel }) {
       </header>
 
       <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {alertMessage && (
+          <div className="max-w-7xl mx-auto px-8 pt-8 pb-2">
+            <Alert
+              message={alertMessage}
+              type={alertType}
+              onClose={() => setAlertMessage(null)}
+            />
+          </div>
+        )}
         
         <input type="file" accept="image/*" ref={bannerInputRef} onChange={(e) => handleImageUpload(e, 'banner')} className="hidden" />
         <input type="file" accept="image/*" ref={avatarInputRef} onChange={(e) => handleImageUpload(e, 'avatar')} className="hidden" />

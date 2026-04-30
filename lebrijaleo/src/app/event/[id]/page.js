@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import Sidebar from "@/components/layout/Navbar";
+import { Alert } from "@/components/ui/alert";
 import {
   MdArrowBack,
   MdShare,
@@ -319,21 +320,43 @@ export default function EventDetailPage({ params }) {
                   </span>
                   {/* Destacado dinámico (Opcional, podrías añadir un boolean en DB para esto) */}
                 </div>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight mb-2">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight mb-4">
                   {eventData.nombre}
                 </h1>
-                <div className="flex items-center gap-2 text-white/90">
-                  <MdVerified className="text-xl text-white" />
-                  <span className="text-base md:text-lg font-medium">
-                    {eventData.organizador_nombre || "Organizador"}
-                  </span>
-                </div>
-                <div className="text-white/75 text-sm md:text-base">
-                  {eventData.organizador_username ? `@${eventData.organizador_username}` : null}
-                  {eventData.creador_nombre && eventData.creador_nombre !== eventData.organizador_nombre ? (
-                    <span className="block mt-1">Creado por {eventData.creador_nombre}</span>
-                  ) : null}
-                </div>
+
+                {/* Card del Organizador - Clickeable */}
+                <button
+                  onClick={() => router.push(`/profile/${eventData.id_empresario}`)}
+                  className="flex items-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/20 transition-all duration-300 group cursor-pointer"
+                >
+                  {/* Foto del Organizador */}
+                  <div className="relative flex-shrink-0">
+                    <img
+                      src={
+                        eventData.organizador_avatar ||
+                        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=2070&auto=format&fit=crop"
+                      }
+                      alt={eventData.organizador_nombre}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-white/30 group-hover:border-white/60 transition-all"
+                    />
+                    <div className="absolute -bottom-1 -right-1 bg-emerald-400 w-4 h-4 rounded-full border-2 border-white"></div>
+                  </div>
+
+                  {/* Info del Organizador */}
+                  <div className="text-left">
+                    <div className="flex items-center gap-1">
+                      <span className="text-white font-semibold text-base md:text-lg">
+                        {eventData.organizador_nombre || "Organizador"}
+                      </span>
+                      <MdVerified className="text-white text-lg" />
+                    </div>
+                    <p className="text-white/70 text-xs md:text-sm">
+                      {eventData.organizador_username ? `@${eventData.organizador_username}` : "Toca para ver perfil"}
+                    </p>
+                  </div>
+                </button>
+
+                
               </div>
             </div>
           </div>
@@ -400,9 +423,11 @@ export default function EventDetailPage({ params }) {
 
             <div className="grid grid-cols-1 gap-8">
               {deleteMessage && (
-                <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl px-4 py-3 text-sm font-medium">
-                  {deleteMessage}
-                </div>
+                <Alert
+                  message={deleteMessage}
+                  type="error"
+                  onClose={() => setDeleteMessage("")}
+                />
               )}
 
               {/* Sección Descripción */}

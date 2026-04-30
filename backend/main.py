@@ -351,11 +351,12 @@ async def obtener_evento(evento_id: str):
         
         # Obtenemos también el campo creado_por del empresario propietario
         try:
-            user_response = supabase.table("usuarios").select("nombre, username, creado_por").eq("id_usuario", evento["id_empresario"]).execute()
+            user_response = supabase.table("usuarios").select("nombre, username, creado_por, avatar_url").eq("id_usuario", evento["id_empresario"]).execute()
             if user_response.data and len(user_response.data) > 0:
                 usuario_evento = user_response.data[0]
                 evento["organizador_nombre"] = usuario_evento.get("nombre")
                 evento["organizador_username"] = usuario_evento.get("username")
+                evento["organizador_avatar"] = usuario_evento.get("avatar_url")
                 evento["empresario_creado_por"] = usuario_evento.get("creado_por")
 
                 creador_id = usuario_evento.get("creado_por")

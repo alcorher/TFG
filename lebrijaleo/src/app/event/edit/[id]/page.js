@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Sidebar from '@/components/layout/Navbar';
+import { Alert } from '@/components/ui/alert';
 import { createClient } from "@/utils/supabase/client";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import {
@@ -24,6 +25,8 @@ export default function EditEventPage({ params }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertType, setAlertType] = useState("info");
 
   // Nuevos estados para las reglas de negocio
   const [error, setError] = useState(null);
@@ -167,7 +170,8 @@ export default function EditEventPage({ params }) {
       const token = session?.access_token;
 
       if (!token) {
-        alert("Debes iniciar sesión para editar el evento.");
+        setAlertMessage("Debes iniciar sesión para editar el evento.");
+        setAlertType("error");
         setIsSaving(false);
         return;
       }
@@ -193,15 +197,18 @@ export default function EditEventPage({ params }) {
       });
 
       if (response.ok) {
-        alert("¡Evento actualizado con éxito!");
-        router.push(`/event/${id}`);
+        setAlertMessage("¡Evento actualizado con éxito!");
+        setAlertType("success");
+        setTimeout(() => router.push(`/event/${id}`), 1500);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        alert(getFriendlyErrorMessage(errorData, "No se ha podido actualizar el evento. Revisa los campos e inténtalo de nuevo."));
+        setAlertMessage(getFriendlyErrorMessage(errorData, "No se ha podido actualizar el evento. Revisa los campos e inténtalo de nuevo."));
+        setAlertType("error");
       }
     } catch (error) {
       console.error("Error al actualizar:", error);
-      alert("No se ha podido conectar con el servidor para actualizar el evento.");
+      setAlertMessage("No se ha podido conectar con el servidor para actualizar el evento.");
+      setAlertType("error");
     } finally {
       setIsSaving(false);
     }
@@ -220,7 +227,8 @@ export default function EditEventPage({ params }) {
       const token = session?.access_token;
 
       if (!token) {
-        alert("Debes iniciar sesión para eliminar el evento.");
+        setAlertMessage("Debes iniciar sesión para eliminar el evento.");
+        setAlertType("error");
         return;
       }
 
@@ -236,10 +244,12 @@ export default function EditEventPage({ params }) {
       }
 
       const errorData = await response.json().catch(() => ({}));
-      alert(getFriendlyErrorMessage(errorData, "No se ha podido eliminar el evento. Revisa tus permisos e inténtalo de nuevo."));
+      setAlertMessage(getFriendlyErrorMessage(errorData, "No se ha podido eliminar el evento. Revisa tus permisos e inténtalo de nuevo."));
+      setAlertType("error");
     } catch (error) {
       console.error("Error deleting event:", error);
-      alert("No se ha podido conectar con el servidor para eliminar el evento.");
+      setAlertMessage("No se ha podido conectar con el servidor para eliminar el evento.");
+      setAlertType("error");
     } finally {
       setIsDeleting(false);
     }
@@ -281,6 +291,16 @@ export default function EditEventPage({ params }) {
 
         <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
           <div className="max-w-4xl mx-auto">
+            {alertMessage && (
+              <div className="mb-6">
+                <Alert
+                  message={alertMessage}
+                  type={alertType}
+                  onClose={() => setAlertMessage(null)}
+                />
+              </div>
+            )}
+
             {/* AVISO DE EVENTO PASADO (RN-005) */}
             {isPastEvent && (
               <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl flex items-start gap-3">

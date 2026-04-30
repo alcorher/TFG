@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 import Sidebar from "@/components/layout/Navbar";
+import { Alert } from "@/components/ui/alert";
 
 import { createClient } from "@/utils/supabase/client";
 import { getFriendlyErrorMessage } from "@/lib/utils";
@@ -56,6 +57,8 @@ export default function CreateEventPage() {
 
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertType, setAlertType] = useState("info");
   const minDateTime = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
   const handleInputChange = (e) => {
@@ -107,8 +110,8 @@ export default function CreateEventPage() {
     e.preventDefault();
 
     if (!imageFile) {
-      alert("Por favor, sube una imagen de portada para tu evento.");
-
+      setAlertMessage("Por favor, sube una imagen de portada para tu evento.");
+      setAlertType("warning");
       return;
     }
 
@@ -123,24 +126,27 @@ export default function CreateEventPage() {
     const token = session?.access_token;
 
     if (!token) {
-      alert("Debes iniciar sesión para publicar un evento.");
-
+      setAlertMessage("Debes iniciar sesión para publicar un evento.");
+      setAlertType("error");
       return;
     }
 
     if (!formData.date) {
-      alert("Selecciona una fecha y hora para el evento.");
+      setAlertMessage("Selecciona una fecha y hora para el evento.");
+      setAlertType("warning");
       return;
     }
 
     const selectedDate = new Date(formData.date);
     if (Number.isNaN(selectedDate.getTime())) {
-      alert("La fecha seleccionada no es válida.");
+      setAlertMessage("La fecha seleccionada no es válida.");
+      setAlertType("error");
       return;
     }
 
     if (selectedDate < new Date()) {
-      alert("No puedes crear eventos con una fecha ya pasada.");
+      setAlertMessage("No puedes crear eventos con una fecha ya pasada.");
+      setAlertType("warning");
       return;
     }
 
@@ -171,20 +177,25 @@ export default function CreateEventPage() {
       if (response.ok) {
         const result = await response.json();
 
-        alert("¡Evento publicado con éxito en LebriJaleo!");
+        setAlertMessage("¡Evento publicado con éxito en LebriJaleo!");
+        setAlertType("success");
         const createdEvent = Array.isArray(result.data) ? result.data[0] : result.data;
-        if (createdEvent?.id_evento) {
-          router.push(`/event/${createdEvent.id_evento}`);
-        } else {
-          router.push("/myEvents");
-        }
+        setTimeout(() => {
+          if (createdEvent?.id_evento) {
+            router.push(`/event/${createdEvent.id_evento}`);
+          } else {
+            router.push("/myEvents");
+          }
+        }, 1500);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        alert(getFriendlyErrorMessage(errorData, "No se ha podido publicar el evento. Revisa los campos e inténtalo de nuevo."));
+        setAlertMessage(getFriendlyErrorMessage(errorData, "No se ha podido publicar el evento. Revisa los campos e inténtalo de nuevo."));
+        setAlertType("error");
       }
     } catch (error) {
       console.error("Error de conexión:", error);
-      alert("No se ha podido conectar con el servidor para publicar el evento.");
+      setAlertMessage("No se ha podido conectar con el servidor para publicar el evento.");
+      setAlertType("error");
     }
   };
 
@@ -207,6 +218,15 @@ export default function CreateEventPage() {
 
         <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
           <div className="max-w-4xl mx-auto">
+            {alertMessage && (
+              <div className="mb-6">
+                <Alert
+                  message={alertMessage}
+                  type={alertType}
+                  onClose={() => setAlertMessage(null)}
+                />
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* SECCIÓN 1: Información básica */}
 
