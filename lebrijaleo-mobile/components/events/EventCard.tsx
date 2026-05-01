@@ -1,17 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { formatDateES } from '@/lib/utils';
 import { COLORS } from '@/constants/theme'; // Tu nuevo archivo centralizado
 
 export default function EventCard({ evento }) {
-  const navigation = useNavigation();
+  const router = useRouter();
   const isFree = evento.precio === 'Gratis' || Number(evento.precio) === 0;
   const eventoId = evento.id_evento;
 
   const handleCardPress = () => {
-    navigation.navigate('EventDetail', { id: eventoId }); 
+    if (!eventoId) return;
+    router.push({
+      pathname: '/event/[id]',
+      params: { id: String(eventoId) },
+    });
   };
 
   const handleLikePress = () => {
