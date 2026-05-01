@@ -1,5 +1,4 @@
-// @ts-nocheck
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -19,12 +18,52 @@ import {
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
+import type { DateData } from 'react-native-calendars';
 import { useRouter } from 'expo-router';
 
 import { COLORS } from '@/constants/theme';
-import { API_URL } from '@/lib/api';
+import { API_URL, type EventFormValues } from '@/lib/api';
 import { getFriendlyErrorMessage } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+
+type FormMode = 'create' | 'edit';
+
+type FormErrorKey = keyof EventFormValues | 'image';
+
+type FormErrors = Partial<Record<FormErrorKey, string>>;
+
+export type SubmitResult = {
+  data?: Array<{ id_evento?: string | number }> | { id_evento?: string | number };
+};
+
+type EventFormScreenProps = {
+  mode: FormMode;
+  eventId?: string;
+  initialValues?: Partial<EventFormValues> | null;
+  initialImage?: string;
+  title: string;
+  submitLabel: string;
+  successMessage: string;
+  isPastEvent?: boolean;
+  isLoading?: boolean;
+  loadingError?: string;
+  onSubmitSuccess?: (result: SubmitResult) => void;
+  onDeleteSuccess?: () => void;
+};
+
+type FieldProps = {
+  label: string;
+  error?: string;
+  children: ReactNode;
+};
+
+type BottomSheetProps = {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+};
+
+type ImagePickerAsset = ImagePicker.ImagePickerAsset | null;
 
 LocaleConfig.locales.es = {
   monthNames: [
@@ -52,22 +91,22 @@ const AVAILABLE_CATEGORIES = ['Música', 'Teatro', 'Gastronomía', 'Arte', 'Depo
 
 const DEFAULT_POSTER = 'https://images.unsplash.com/photo-1533174000222-edfe3abc5496?q=80&w=2070';
 
-function getTodayKey() {
+function getTodayKey(): string {
   return new Date().toISOString().split('T')[0];
 }
 
-function toEventDateTime(dateKey, timeValue) {
+function toEventDateTime(dateKey: string, timeValue: string): Date | null {
   if (!dateKey || !timeValue) return null;
   const value = new Date(`${dateKey}T${timeValue}:00`);
   if (Number.isNaN(value.getTime())) return null;
   return value;
 }
 
-function getDefaultTime() {
+function getDefaultTime(): string {
   return '21:00';
 }
 
-function getInitialState(initialValues) {
+function getInitialState(initialValues?: Partial<EventFormValues> | null): EventFormValues {
   const dateTime = initialValues?.date ? new Date(initialValues.date) : null;
   const dateKey =
     dateTime && !Number.isNaN(dateTime.getTime()) ? dateTime.toISOString().split('T')[0] : '';
@@ -103,22 +142,21 @@ export function EventFormScreen({
   loadingError = '',
   onSubmitSuccess,
   onDeleteSuccess,
-}) {
+}: EventFormScreenProps) {
   const router = useRouter();
   const [formData, setFormData] = useState(() => getInitialState(initialValues));
   const [imagePreview, setImagePreview] = useState(initialImage || '');
-  const [imageAsset, setImageAsset] = useState(null);
+  const [imageAsset, setImageAsset] = useState<ImagePickerAsset>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-  const [alertType, setAlertType] = useState('info');
-  const [formErrors, setFormErrors] = useState({});
+  const [alertType, setAlertType] = useState<'info' | 'warning' | 'error' | 'success'>('info');
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTipsOpen, setIsTipsOpen] = useState(false);
-  const scrollRef = useRef(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFormData(getInitialState(initialValues));
     setImagePreview(initialImage || '');
   }, [initialImage, initialValues]);
@@ -135,17 +173,18 @@ export function EventFormScreen({
     });
   }, [formData.date]);
 
-  const handleChange = (field, value) => {
+  const handleChange = <K extends keyof EventFormValues>(field: K, value: EventFormValues[K]) => {
     setFormErrors((prev) => ({ ...prev, [field]: '' }));
     setFormData((prev) => {
       if (field === 'isFree') {
+        const nextIsFree = value as boolean;
         return {
           ...prev,
-          isFree: value,
-          price: value ? '0' : prev.price === '0' ? '' : prev.price,
+          isFree: nextIsFree,
+          price: nextIsFree ? '0' : prev.price === '0' ? '' : prev.price,
         };
       }
-      return { ...prev, [field]: value };
+      return { ...prev, [field]: String(value) };
     });
   };
 
@@ -160,7 +199,7 @@ export function EventFormScreen({
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: mode === 'create' ? [4, 5] : [16, 9],
       quality: 0.9,
@@ -173,8 +212,8 @@ export function EventFormScreen({
     }
   };
 
-  const validateForm = () => {
-    const errors = {};
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
     const eventDate = toEventDateTime(formData.date, formData.time);
 
     if (!formData.title.trim()) errors.title = 'El título es obligatorio.';
@@ -210,14 +249,17 @@ export function EventFormScreen({
     return Object.keys(errors).length === 0;
   };
 
-  const buildFormData = () => {
+  const buildFormData = (): FormData => {
     const multipart = new FormData();
     if (imageAsset?.uri) {
-      multipart.append('banner', {
-        uri: imageAsset.uri,
-        name: imageAsset.fileName || `event-banner.${imageAsset.mimeType?.split('/')[1] || 'jpg'}`,
-        type: imageAsset.mimeType || 'image/jpeg',
-      });
+      multipart.append(
+        'banner',
+        {
+          uri: imageAsset.uri,
+          name: imageAsset.fileName || `event-banner.${imageAsset.mimeType?.split('/')[1] || 'jpg'}`,
+          type: imageAsset.mimeType || 'image/jpeg',
+        } as unknown as Blob,
+      );
     }
 
     const datetime = `${formData.date}T${formData.time || getDefaultTime()}`;
@@ -274,7 +316,7 @@ export function EventFormScreen({
         return;
       }
 
-      const result = await response.json().catch(() => ({}));
+      const result = (await response.json().catch(() => ({}))) as SubmitResult;
       setAlertMessage(successMessage);
       setAlertType('success');
 
@@ -402,7 +444,6 @@ export function EventFormScreen({
       </View>
 
       <ScrollView
-        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
         <Text style={styles.screenTitle}>{title}</Text>
@@ -702,7 +743,7 @@ export function EventFormScreen({
         <BottomSheet title="Selecciona una fecha" onClose={() => setIsCalendarOpen(false)}>
           <Calendar
             minDate={isPastEvent ? undefined : getTodayKey()}
-            onDayPress={(day) => {
+            onDayPress={(day: DateData) => {
               handleChange('date', day.dateString);
               setIsCalendarOpen(false);
             }}
@@ -759,7 +800,7 @@ export function EventFormScreen({
   );
 }
 
-function Field({ label, error, children }) {
+function Field({ label, error, children }: FieldProps) {
   return (
     <View style={styles.fieldBlock}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -769,7 +810,7 @@ function Field({ label, error, children }) {
   );
 }
 
-function BottomSheet({ title, onClose, children }) {
+function BottomSheet({ title, onClose, children }: BottomSheetProps) {
   return (
     <View style={styles.modalOverlay}>
       <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} />

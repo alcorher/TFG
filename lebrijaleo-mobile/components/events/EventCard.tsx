@@ -2,13 +2,18 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import type { Evento } from '@/lib/api';
 import { formatDateES } from '@/lib/utils';
 import { COLORS } from '@/constants/theme'; // Tu nuevo archivo centralizado
 
-export default function EventCard({ evento }) {
+type EventCardProps = {
+  evento: Evento;
+};
+
+export default function EventCard({ evento }: EventCardProps) {
   const router = useRouter();
   const isFree = evento.precio === 'Gratis' || Number(evento.precio) === 0;
-  const eventoId = evento.id_evento;
+  const eventoId = evento.id_evento ?? evento.id;
 
   const handleCardPress = () => {
     if (!eventoId) return;

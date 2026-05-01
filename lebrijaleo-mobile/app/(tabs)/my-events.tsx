@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -16,19 +15,19 @@ import { useRouter } from 'expo-router';
 
 import EventCard from '@/components/events/EventCard';
 import { COLORS } from '@/constants/theme';
-import { API_URL } from '@/lib/api';
+import { API_URL, type Evento } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
 export default function MyEventsScreen() {
   const router = useRouter();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [eventos, setEventos] = useState([]);
+  const [eventos, setEventos] = useState<Evento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState('');
 
-  const fetchMisEventos = async ({ refreshing = false } = {}) => {
+  const fetchMisEventos = async ({ refreshing = false }: { refreshing?: boolean } = {}) => {
     try {
       if (refreshing) {
         setIsRefreshing(true);
@@ -59,8 +58,12 @@ export default function MyEventsScreen() {
         return;
       }
 
-      const result = await response.json();
-      const data = Array.isArray(result?.data) ? result.data : Array.isArray(result) ? result : [];
+      const result = (await response.json()) as { data?: Evento[] } | Evento[];
+      const data = Array.isArray(result)
+        ? result
+        : Array.isArray(result.data)
+          ? result.data
+          : [];
       setEventos(data);
     } catch (error) {
       console.error('Error fetching my events:', error);

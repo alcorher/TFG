@@ -1,9 +1,8 @@
-// @ts-nocheck
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { EventFormScreen } from '@/components/events/EventFormScreen';
-import { API_URL } from '@/lib/api';
+import { API_URL, type EventDetail } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
 export default function EditEventScreen() {
@@ -12,7 +11,7 @@ export default function EditEventScreen() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [loadingError, setLoadingError] = useState('');
-  const [eventData, setEventData] = useState(null);
+  const [eventData, setEventData] = useState<EventDetail | null>(null);
   const [isPastEvent, setIsPastEvent] = useState(false);
 
   useEffect(() => {
@@ -29,7 +28,7 @@ export default function EditEventScreen() {
           throw new Error('No se pudo cargar el evento');
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as EventDetail;
         const {
           data: { session },
         } = await supabase.auth.getSession();

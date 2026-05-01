@@ -6,6 +6,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { isBefore, isValid, isWithinInterval, parseISO, startOfDay } from 'date-fns';
+import type { Evento } from '@/lib/api';
 
 // Componentes importados (asegúrate de adaptarlos también a React Native)
 import Navbar from '@/components/layout/Sidebar'; 
@@ -34,15 +35,16 @@ const COLORS = {
 };
 
 export default function HomePage() {
+  type DateRange = { from: Date | null; to: Date | null };
   const insets = useSafeAreaInsets();
 
-  const [eventos, setEventos] = useState([]);
+  const [eventos, setEventos] = useState<Evento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   
-  const [activeFilters, setActiveFilters] = useState([]);
-  const [dateRange, setDateRange] = useState({ from: null, to: null });
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
@@ -57,16 +59,16 @@ export default function HomePage() {
           return;
         }
 
-        const result = await response.json();
+        const result = (await response.json()) as { data?: Evento[] } | Evento[];
         const eventosData = Array.isArray(result)
           ? result
-          : Array.isArray(result?.data)
+          : Array.isArray(result.data)
           ? result.data
           : [];
 
         setEventos(eventosData);
 
-        if (!Array.isArray(result?.data) && !Array.isArray(result)) {
+        if (!Array.isArray(result) && !Array.isArray(result.data)) {
           setFetchError('La respuesta de la API no tiene el formato esperado.');
         }
       } catch (error) {
@@ -81,9 +83,9 @@ export default function HomePage() {
     fetchEventos();
   }, []);
 
-  const toggleFilter = (categoria) => {
+  const toggleFilter = (categoria: string) => {
     if (activeFilters.includes(categoria)) {
-      setActiveFilters(activeFilters.filter(f => f !== categoria));
+      setActiveFilters(activeFilters.filter((f) => f !== categoria));
     } else {
       setActiveFilters([...activeFilters, categoria]);
     }
@@ -92,13 +94,15 @@ export default function HomePage() {
   const eventosFiltrados = eventos.filter((evento) => {
     const todayStart = startOfDay(new Date());
     const hasDateFilter = Boolean(dateRange?.from && dateRange?.to);
-    const allowPastByDateFilter = hasDateFilter && isBefore(startOfDay(dateRange.from), todayStart);
+    const allowPastByDateFilter =
+      hasDateFilter && dateRange.from ? isBefore(startOfDay(dateRange.from), todayStart) : false;
 
     const coincideTexto = 
       (evento.nombre || evento.titulo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (evento.lugar || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-    const coincideCategoria = activeFilters.length === 0 || activeFilters.includes(evento.categoria);
+    const coincideCategoria =
+      activeFilters.length === 0 || (evento.categoria ? activeFilters.includes(evento.categoria) : false);
 
     let coincideFecha = true;
     const fechaEvento = evento.fecha ? parseISO(evento.fecha) : null;
@@ -115,7 +119,10 @@ export default function HomePage() {
 
     if (dateRange?.from && dateRange?.to && fechaEvento) {
       try {
-        coincideFecha = isWithinInterval(fechaEvento, { start: dateRange.from, end: dateRange.to });
+        coincideFecha = isWithinInterval(fechaEvento, {
+          start: dateRange.from,
+          end: dateRange.to,
+        });
       } catch {
         coincideFecha = true;
       }
