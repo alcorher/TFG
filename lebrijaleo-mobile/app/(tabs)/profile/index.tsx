@@ -4,6 +4,7 @@ import {
   Alert,
   Image,
   Modal,
+  Share,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -73,31 +74,35 @@ function generateStatsTxt(stats: OrganizerStats) {
 
   let txt = '';
   txt += '=============================================\n';
-  txt += '  ESTADISTICAS DE ORGANIZADOR - LebriJaleo\n';
+  txt += '  ESTADÍSTICAS DE ORGANIZADOR — LebriJaleo\n';
   txt += '=============================================\n';
   txt += `Organizador : ${stats.nombre}\n`;
   if (stats.username) txt += `Usuario     : @${stats.username}\n`;
-  txt += `Fecha       : ${fecha}\n\n`;
+  txt += `Fecha       : ${fecha}\n`;
+  txt += '\n';
   txt += '--- RESUMEN ---\n';
   txt += `Seguidores totales   : ${stats.seguidores_totales}\n`;
   txt += `Likes totales        : ${stats.likes_totales}\n`;
-  txt += `Eventos publicados   : ${stats.num_eventos}\n\n`;
+  txt += `Eventos publicados   : ${stats.num_eventos}\n`;
+  txt += '\n';
 
-  if (stats.evento_top?.nombre) {
+  if (stats.evento_top && stats.evento_top.nombre) {
     txt += '--- EVENTO ESTRELLA ---\n';
     txt += `Nombre : ${stats.evento_top.nombre}\n`;
-    txt += `Likes  : ${stats.evento_top.likes ?? 0}\n\n`;
+    txt += `Likes  : ${stats.evento_top.likes}\n`;
+    txt += '\n';
   } else {
     txt += '--- EVENTO ESTRELLA ---\n';
-    txt += 'Sin eventos publicados aun.\n\n';
+    txt += 'Sin eventos publicados aún.\n';
+    txt += '\n';
   }
 
   if (stats.eventos && stats.eventos.length > 0) {
     txt += '--- DESGLOSE POR EVENTO ---\n';
-    [...stats.eventos]
+    stats.eventos
       .sort((a, b) => b.likes - a.likes)
-      .forEach((evento, index) => {
-        txt += `  ${index + 1}. ${evento.nombre} - ${evento.likes} like${evento.likes !== 1 ? 's' : ''}\n`;
+      .forEach((ev, index) => {
+        txt += `  ${index + 1}. ${ev.nombre} — ${ev.likes} like${ev.likes !== 1 ? 's' : ''}\n`;
       });
     txt += '\n';
   }
@@ -231,7 +236,9 @@ export default function ProfilePage() {
 
       const stats = await fetchOrganizerStats(userProfile.id, session.access_token);
       const txtContent = generateStatsTxt(stats);
-      const safeName = (stats.nombre || 'organizador').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_');
+      const safeName = (stats.nombre || 'organizador')
+        .replace(/[^a-zA-Z0-9 ]/g, '')
+        .replace(/\s+/g, '_');
 
       if (!FileSystem.documentDirectory) {
         throw new Error('No hay un directorio de documentos disponible');
@@ -242,10 +249,16 @@ export default function ProfilePage() {
         encoding: FileSystem.EncodingType.UTF8,
       });
 
-      Alert.alert('Estadisticas guardadas', `Se ha generado el archivo en:\n${fileUri}`);
+      await Share.share({
+        url: fileUri,
+        message: 'Comparte o guarda tus estadísticas de organizador.',
+        title: `estadisticas_${safeName}.txt`,
+      });
+
+      Alert.alert('Estadísticas generadas', 'El archivo se ha creado y se ha abierto el panel para compartirlo.');
     } catch (error) {
       console.error('Error descargando estadisticas:', error);
-      Alert.alert('Error', 'No se pudieron descargar las estadisticas.');
+      Alert.alert('Error', 'No se pudieron descargar las estadísticas.');
     } finally {
       setStatsLoading(false);
       setShowActionPanel(false);

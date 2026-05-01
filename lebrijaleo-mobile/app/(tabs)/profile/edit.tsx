@@ -16,6 +16,7 @@ import {
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
+import * as ImagePicker from 'expo-image-picker';
 
 import { COLORS } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
@@ -34,6 +35,12 @@ type ProfileForm = {
   rol: UserRole;
 };
 
+type ImageSelection = {
+  uri: string;
+  filename: string;
+  mimetype: string;
+};
+
 const DEFAULT_LOCATIONS = [
   'Lebrija, Sevilla',
   'Las Cabezas de San Juan',
@@ -49,6 +56,8 @@ export default function ProfileEditScreen() {
   const [isFetching, setIsFetching] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showSupportCard, setShowSupportCard] = useState(true);
+  const [selectedAvatar, setSelectedAvatar] = useState<ImageSelection | null>(null);
+  const [selectedBanner, setSelectedBanner] = useState<ImageSelection | null>(null);
   const [formData, setFormData] = useState<ProfileForm>({
     nombre: '',
     username: '',
@@ -133,6 +142,75 @@ export default function ProfileEditScreen() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const pickImage = async (type: 'avatar' | 'banner') => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: type === 'avatar' ? [1, 1] : [16, 9],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        const filename = asset.fileName || `${type}_${Date.now()}.jpg`;
+        const imageSelection: ImageSelection = {
+          uri: asset.uri,
+          filename,
+          mimetype: asset.mimeType || 'image/jpeg',
+        };
+
+        if (type === 'avatar') {
+          setSelectedAvatar(imageSelection);
+        } else {
+          setSelectedBanner(imageSelection);
+        }
+      }
+    } catch (error) {
+      console.error(`Error selecting ${type}:`, error);
+      Alert.alert('Error', `No se pudo seleccionar la imagen de ${type}.`);
+    }
+  };
+
+  const uploadImage = async (imageSelection: ImageSelection, token: string): Promise<string> => {
+    try {
+      const formData = new FormData();
+
+      if (Platform.OS === 'web') {
+        // En web, convertir URI a blob usando fetch
+        const response = await fetch(imageSelection.uri);
+        const blob = await response.blob();
+        formData.append('file', blob, imageSelection.filename);
+      } else {
+        // En nativo (Android/iOS), usar el URI directamente
+        formData.append('file', {
+          uri: imageSelection.uri,
+          name: imageSelection.filename,
+          type: imageSelection.mimetype,
+        } as any);
+      }
+
+      const uploadResponse = await fetch(`${API_URL}/api/upload`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = (await uploadResponse.json().catch(() => ({}))) as { detail?: string };
+        throw new Error(errorData.detail || 'Error al subir la imagen');
+      }
+
+      const result = (await uploadResponse.json()) as { url?: string; file_url?: string };
+      return result.url || result.file_url || imageSelection.uri;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
   const handleSelectLocation = () => {
     Alert.alert(
       'Ubicacion',
@@ -157,6 +235,18 @@ export default function ProfileEditScreen() {
         return;
       }
 
+      let avatarUrl = formData.avatar_url;
+      let bannerUrl = formData.banner_url;
+
+      // Upload selected images
+      if (selectedAvatar) {
+        avatarUrl = await uploadImage(selectedAvatar, session.access_token);
+      }
+
+      if (selectedBanner) {
+        bannerUrl = await uploadImage(selectedBanner, session.access_token);
+      }
+
       const response = await fetch(`${API_URL}/api/perfil`, {
         method: 'PUT',
         headers: {
@@ -168,8 +258,8 @@ export default function ProfileEditScreen() {
           username: formData.username,
           biografia: formData.biografia,
           ubicacion: formData.ubicacion,
-          avatar_url: formData.avatar_url,
-          banner_url: formData.banner_url,
+          avatar_url: avatarUrl,
+          banner_url: bannerUrl,
         }),
       });
 
@@ -193,6 +283,8 @@ export default function ProfileEditScreen() {
         }));
       }
 
+      setSelectedAvatar(null);
+      setSelectedBanner(null);
       Alert.alert('Perfil actualizado', 'Los cambios se han guardado correctamente.');
     } catch (error) {
       console.error('Error guardando perfil:', error);
@@ -312,27 +404,35 @@ export default function ProfileEditScreen() {
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>URL del avatar</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.avatar_url}
-                onChangeText={(value) => handleChange('avatar_url', value)}
-                placeholder="https://..."
-                autoCapitalize="none"
-                placeholderTextColor={COLORS.slate400}
-              />
+              <Text style={styles.label}>Foto de perfil</Text>
+              <View style={styles.imagePreviewWrapper}>
+                <Image
+                  source={{ uri: selectedAvatar?.uri || formData.avatar_url || defaultAvatar }}
+                  style={styles.imagePreview}
+                />
+              </View>
+              <TouchableOpacity style={styles.uploadButton} onPress={() => pickImage('avatar')}>
+                <MaterialIcons name="cloud-upload" size={20} color={COLORS.midnightBlue} />
+                <Text style={styles.uploadButtonText}>
+                  {selectedAvatar ? 'Cambiar foto' : 'Seleccionar foto'}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>URL de la portada</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.banner_url}
-                onChangeText={(value) => handleChange('banner_url', value)}
-                placeholder="https://..."
-                autoCapitalize="none"
-                placeholderTextColor={COLORS.slate400}
-              />
+              <Text style={styles.label}>Foto de portada</Text>
+              <View style={styles.bannerPreviewWrapper}>
+                <Image
+                  source={{ uri: selectedBanner?.uri || formData.banner_url || defaultBanner }}
+                  style={styles.bannerPreview}
+                />
+              </View>
+              <TouchableOpacity style={styles.uploadButton} onPress={() => pickImage('banner')}>
+                <MaterialIcons name="cloud-upload" size={20} color={COLORS.midnightBlue} />
+                <Text style={styles.uploadButtonText}>
+                  {selectedBanner ? 'Cambiar portada' : 'Seleccionar portada'}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.buttonRow}>
@@ -681,5 +781,48 @@ const styles = StyleSheet.create({
   logoutText: {
     color: COLORS.red500,
     fontWeight: '700',
+  },
+  imagePreviewWrapper: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(213,213,216,0.5)',
+    backgroundColor: '#f8fafc',
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+  },
+  bannerPreviewWrapper: {
+    width: '100%',
+    height: 160,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(213,213,216,0.5)',
+    backgroundColor: '#f8fafc',
+  },
+  bannerPreview: {
+    width: '100%',
+    height: '100%',
+  },
+  uploadButton: {
+    marginTop: 12,
+    minHeight: 48,
+    borderRadius: 14,
+    backgroundColor: COLORS.lemonIcing,
+    borderWidth: 1,
+    borderColor: 'rgba(213,213,216,0.5)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  uploadButtonText: {
+    color: COLORS.midnightBlue,
+    fontWeight: '600',
+    fontSize: 15,
   },
 });
