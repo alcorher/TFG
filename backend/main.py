@@ -127,6 +127,47 @@ def actualizar_perfil(perfil: PerfilUpdate, current_user = Depends(get_current_u
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error al actualizar el perfil: {str(e)}")
 
+@app.post("/api/upload")
+async def upload_file(
+    file: UploadFile = File(...),
+    current_user = Depends(get_current_user)
+):
+    """Carga un archivo a Supabase Storage y devuelve la URL pública"""
+    try:
+        if not file.filename:
+            raise HTTPException(status_code=400, detail="El archivo no tiene nombre")
+        
+        # Obtener extensión
+        extension = file.filename.split(".")[-1].lower()
+        
+        # Validar tipos de archivo permitidos
+        allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+        if extension not in allowed_extensions:
+            raise HTTPException(status_code=400, detail=f"Tipo de archivo no permitido. Usa: {', '.join(allowed_extensions)}")
+        
+        # Crear nombre único del archivo
+        nombre_archivo = f"perfiles/{current_user.id}/{uuid.uuid4()}.{extension}"
+        
+        # Leer contenido del archivo
+        contenido_archivo = await file.read()
+        
+        # Subir a Supabase Storage
+        supabase.storage.from_("eventos").upload(
+            path=nombre_archivo,
+            file=contenido_archivo,
+            file_options={"content-type": file.content_type}
+        )
+        
+        # Obtener URL pública
+        file_url = supabase.storage.from_("eventos").get_public_url(nombre_archivo)
+        
+        return {"url": file_url, "file_url": file_url}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error al subir archivo: {e}")
+        raise HTTPException(status_code=400, detail=f"Error al subir archivo: {str(e)}")
+
 @app.get("/api/perfil/{user_id}")
 def obtener_perfil_publico(user_id: str):
     """Obtiene el perfil público de cualquier usuario por su ID"""
