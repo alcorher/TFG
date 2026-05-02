@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
+import type { DateData, MarkedDates } from 'react-native-calendars/src/types';
 import { addDays, format, parseISO, isBefore } from 'date-fns';
 import { COLORS } from '@/constants/theme';
 
@@ -14,7 +15,18 @@ LocaleConfig.locales['es'] = {
 };
 LocaleConfig.defaultLocale = 'es';
 
-const toDayString = (value) => {
+type DateRangeValue = {
+  from: Date | null;
+  to: Date | null;
+};
+
+type DateRangePickerProps = {
+  style?: StyleProp<ViewStyle>;
+  value: DateRangeValue;
+  onRangeChange: (range: DateRangeValue) => void;
+};
+
+const toDayString = (value: Date | string | null | undefined): string | null => {
   if (!value) return null;
 
   if (typeof value === 'string') {
@@ -24,7 +36,7 @@ const toDayString = (value) => {
   return format(value, 'yyyy-MM-dd');
 };
 
-export function DateRangePicker({ style, value, onRangeChange }) {
+export function DateRangePicker({ style, value, onRangeChange }: DateRangePickerProps) {
   // react-native-calendars trabaja nativamente con strings 'YYYY-MM-DD'
   const [startDate, setStartDate] = useState(toDayString(value?.from));
   const [endDate, setEndDate] = useState(toDayString(value?.to));
@@ -47,7 +59,7 @@ export function DateRangePicker({ style, value, onRangeChange }) {
     }
   }, [startDate, endDate, onRangeChange]);
 
-  const onDayPress = (day) => {
+  const onDayPress = (day: DateData) => {
     if (!startDate || (startDate && endDate)) {
       // Inicia un nuevo rango
       setStartDate(day.dateString);
@@ -67,8 +79,8 @@ export function DateRangePicker({ style, value, onRangeChange }) {
   };
 
   // 2. Generar el marcado visual (equivalente a day_selected y day_range_middle de Tailwind)
-  const getMarkedDates = () => {
-    const marked = {};
+  const getMarkedDates = (): MarkedDates => {
+    const marked: MarkedDates = {};
     const selectionColor = COLORS.lemonIcing;
     const middleColor = 'rgba(246, 235, 200, 0.4)'; // lemon-icing/40
     const textColor = COLORS.midnightBlue;
@@ -111,15 +123,8 @@ export function DateRangePicker({ style, value, onRangeChange }) {
           monthTextColor: COLORS.midnightBlue,
           textDayFontWeight: '500',
           textMonthFontWeight: 'bold',
-          textDayHeaderFontWeight: 'bold',
-          // Replicando "day_today" font-bold de tu web
-          'stylesheet.day.period': {
-            todayText: {
-              fontWeight: 'bold',
-              color: COLORS.midnightBlue,
-            }
-          }
-        }}
+              textDayHeaderFontWeight: 'bold',
+            }}
       />
     </View>
   );

@@ -23,6 +23,7 @@ export const COLORS = {
   
   // Neutros y estados (para replicar clases de Tailwind base)
   white: '#ffffff',
+  slate100: '#f1f5f9',
   slate400: '#94a3b8',
   slate500: '#64748b',
   slate600: '#475569',
@@ -31,6 +32,25 @@ export const COLORS = {
   // Transparencias (útiles para modales)
   overlay: 'rgba(15, 23, 42, 0.5)', // midnightBlue con 50% de opacidad
 };
+
+export const Colors = {
+  light: {
+    text: COLORS.midnightBlue,
+    background: COLORS.cloudDancer,
+    tint: COLORS.lemonIcingAccent,
+    icon: COLORS.slate500,
+    tabIconDefault: COLORS.slate400,
+    tabIconSelected: COLORS.midnightBlue,
+  },
+  dark: {
+    text: COLORS.white,
+    background: COLORS.midnightBlue,
+    tint: COLORS.lemonIcing,
+    icon: COLORS.nimbusCloud,
+    tabIconDefault: COLORS.slate400,
+    tabIconSelected: COLORS.lemonIcing,
+  },
+} as const;
 
 export const Fonts = Platform.select({
   ios: {

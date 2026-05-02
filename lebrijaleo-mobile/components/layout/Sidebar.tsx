@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, Image, Modal, 
   SafeAreaView, Dimensions 
 } from 'react-native';
-import { usePathname, useRouter } from 'expo-router';
+import { usePathname, useRouter, type Href } from 'expo-router';
 import { supabase } from '@/lib/supabase'; // Ajusta la ruta a tu cliente
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS } from '@/constants/theme'; // Ajusta la ruta a tu archivo de colores
@@ -11,11 +11,33 @@ import { COLORS } from '@/constants/theme'; // Ajusta la ruta a tu archivo de co
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
 const { width } = Dimensions.get('window');
 
+type ProfileResponse = {
+  avatar_url?: string | null;
+  nombre?: string | null;
+  rol?: string | null;
+};
+
+type NavHref =
+  | '/(tabs)'
+  | '/(tabs)/favorites'
+  | '/(tabs)/social'
+  | '/(tabs)/my-organizers'
+  | '/(tabs)/create-event'
+  | '/(tabs)/my-events'
+  | '/(tabs)/profile/edit'
+  | '/(tabs)/profile';
+
+type NavItemProps = {
+  icon: React.ComponentProps<typeof MaterialIcons>['name'];
+  href: NavHref;
+  label: string;
+};
+
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   
-  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState('');
   const [role, setRole] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -31,7 +53,7 @@ export default function Navbar() {
         });
 
         if (response.ok) {
-          const profile = await response.json();
+          const profile = (await response.json()) as ProfileResponse;
           setAvatarUrl(profile.avatar_url || null);
           setUserName(profile.nombre || '');
           setRole(profile.rol || '');
@@ -53,7 +75,7 @@ export default function Navbar() {
   const isOrganizer = role === 'Empresario';
   const showOrganizerTools = isOrganizer || isAdmin;
 
-  const normalizePath = (href) => {
+  const normalizePath = (href: NavHref): string => {
     if (href === '/(tabs)') {
       return '/';
     }
@@ -61,17 +83,17 @@ export default function Navbar() {
     return href.replace('/(tabs)', '');
   };
 
-  const isActive = (href) => {
+  const isActive = (href: NavHref): boolean => {
     const normalizedPath = normalizePath(href);
     return pathname === normalizedPath || pathname.startsWith(`${normalizedPath}/`);
   };
 
-  const navigateTo = (href) => {
+  const navigateTo = (href: NavHref) => {
     setIsMobileMenuOpen(false);
-    router.replace(href);
+    router.replace(href as Href);
   };
 
-  const NavItem = ({ icon, href, label }) => {
+  const NavItem = ({ icon, href, label }: NavItemProps) => {
     const active = isActive(href);
     return (
       <TouchableOpacity 
