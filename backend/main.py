@@ -533,17 +533,17 @@ async def actualizar_evento(
 @app.delete("/api/eventos/{evento_id}")
 def eliminar_evento(evento_id: str, current_user = Depends(get_current_user)):
     try:
-        evento_response = supabase.table("eventos").select("id_empresario").eq("id_evento", evento_id).single().execute()
-        if not evento_response.data:
+        evento_response = supabase.table("eventos").select("id_empresario").eq("id_evento", evento_id).execute()
+        if not evento_response.data or len(evento_response.data) == 0:
             raise HTTPException(status_code=404, detail="Evento no encontrado")
 
-        id_empresario = evento_response.data.get("id_empresario")
+        id_empresario = evento_response.data[0].get("id_empresario")
         creado_por = None
 
         try:
-            usr_response = supabase.table("usuarios").select("creado_por").eq("id_usuario", id_empresario).single().execute()
-            if usr_response.data:
-                creado_por = usr_response.data.get("creado_por")
+            usr_response = supabase.table("usuarios").select("creado_por").eq("id_usuario", id_empresario).execute()
+            if usr_response.data and len(usr_response.data) > 0:
+                creado_por = usr_response.data[0].get("creado_por")
         except Exception:
             pass
 

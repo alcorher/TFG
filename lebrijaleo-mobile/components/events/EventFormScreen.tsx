@@ -249,17 +249,19 @@ export function EventFormScreen({
     return Object.keys(errors).length === 0;
   };
 
-  const buildFormData = (): FormData => {
+  const buildFormData = async (): Promise<FormData> => {
     const multipart = new FormData();
     if (imageAsset?.uri) {
-      multipart.append(
-        'banner',
-        {
-          uri: imageAsset.uri,
-          name: imageAsset.fileName || `event-banner.${imageAsset.mimeType?.split('/')[1] || 'jpg'}`,
-          type: imageAsset.mimeType || 'image/jpeg',
-        } as unknown as Blob,
-      );
+      try {
+        const response = await fetch(imageAsset.uri);
+        const blob = await response.blob();
+        const filename =
+          imageAsset.fileName || `event-banner.${imageAsset.mimeType?.split('/')[1] || 'jpg'}`;
+        multipart.append('banner', blob, filename);
+      } catch (error) {
+        console.error('Error converting image URI to blob:', error);
+        throw new Error('No se pudo procesar la imagen. Intenta de nuevo.');
+      }
     }
 
     const datetime = `${formData.date}T${formData.time || getDefaultTime()}`;
@@ -291,6 +293,7 @@ export function EventFormScreen({
         return;
       }
 
+      const formDataPayload = await buildFormData();
       const response = await fetch(
         mode === 'edit' ? `${API_URL}/api/eventos/${eventId}` : `${API_URL}/api/eventos`,
         {
@@ -298,7 +301,7 @@ export function EventFormScreen({
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          body: buildFormData(),
+          body: formDataPayload,
         },
       );
 
