@@ -249,8 +249,10 @@ export default function ProfilePage() {
         encoding: FileSystem.EncodingType.UTF8,
       });
 
+      const shareUri = await FileSystem.getContentUriAsync(fileUri);
+
       await Share.share({
-        url: fileUri,
+        url: shareUri,
         message: 'Comparte o guarda tus estadísticas de organizador.',
         title: `estadisticas_${safeName}.txt`,
       });

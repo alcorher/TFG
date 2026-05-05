@@ -34,6 +34,7 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:19006",
     "http://localhost:8081",
     "http://127.0.0.1:8081",
+    "https://lebrijaleo.vercel.app",
 ]
 
 # Configurar CORS 
