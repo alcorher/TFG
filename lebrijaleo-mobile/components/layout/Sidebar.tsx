@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'; // Ajusta la ruta a tu cliente
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS } from '@/constants/theme'; // Ajusta la ruta a tu archivo de colores
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://lebrijaleo-backend.onrender.com';
 const { width } = Dimensions.get('window');
 
 type ProfileResponse = {

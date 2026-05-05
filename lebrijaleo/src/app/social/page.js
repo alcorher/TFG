@@ -11,7 +11,7 @@ import {
   MdOpenInNew, MdGridView, MdViewList
 } from "react-icons/md";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://lebrijaleo-backend.onrender.com';
 
 function FriendCard({ friend, viewMode, togglingId, onToggleFriend, onOpenProfile, formatDate, getAvatar }) {
   if (viewMode === 'list') {

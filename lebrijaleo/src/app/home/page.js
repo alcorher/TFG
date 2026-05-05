@@ -10,7 +10,7 @@ import {
   MdClose, MdStorefront, MdArrowForward, MdMenu, MdCheck
 } from "react-icons/md";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://lebrijaleo-backend.onrender.com';
 
 // Lista de categorías de LebriJaleo
 const CATEGORIAS_DISPONIBLES = [

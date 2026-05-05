@@ -3,7 +3,7 @@
  */
 
 export const API_URL =
-  process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+  process.env.EXPO_PUBLIC_API_URL || 'https://lebrijaleo-backend.onrender.com';
 
 /** Tipo base de un evento tal y como lo devuelve /api/eventos */
 export interface Evento {

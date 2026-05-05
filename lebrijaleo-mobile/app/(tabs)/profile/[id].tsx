@@ -19,7 +19,7 @@ import EventCard from '@/components/events/EventCard';
 import { COLORS } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://lebrijaleo-backend.onrender.com';
 
 type UserRole = 'Cliente' | 'Empresario' | 'Administrador' | string;
 

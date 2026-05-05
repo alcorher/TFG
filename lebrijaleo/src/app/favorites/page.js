@@ -9,7 +9,7 @@ import {
   MdExpandMore
 } from "react-icons/md";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://lebrijaleo-backend.onrender.com';
 
 export default function MisFavoritosPage() {
   const [searchTerm, setSearchTerm] = useState("");

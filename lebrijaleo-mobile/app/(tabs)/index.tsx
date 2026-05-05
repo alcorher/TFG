@@ -13,7 +13,7 @@ import Navbar from '@/components/layout/Sidebar';
 import EventCard from '@/components/events/EventCard';
 import { DateRangePicker } from '@/components/events/DateRangePicker';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://lebrijaleo-backend.onrender.com';
 
 const CATEGORIAS_DISPONIBLES = [
   'Flamenco', 'Gastronomía', 'Música', 'Cultura', 

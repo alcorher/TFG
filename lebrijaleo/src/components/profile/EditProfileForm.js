@@ -10,7 +10,7 @@ import {
   MdAlternateEmail, MdLocationOn, MdExpandMore, MdSave 
 } from "react-icons/md";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://lebrijaleo-backend.onrender.com';
 
 export default function EditProfileForm({ onOpenMobilePanel }) {
   const router = useRouter();

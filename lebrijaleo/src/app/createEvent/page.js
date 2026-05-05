@@ -160,7 +160,7 @@ export default function CreateEventPage() {
 
     try {
       const API_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        process.env.NEXT_PUBLIC_API_URL || "https://lebrijaleo-backend.onrender.com";
 
       const response = await fetch(`${API_URL}/api/eventos`, {
         method: "POST",
