@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# LebriJaleo Web
 
-## Getting Started
+Aplicacion web de LebriJaleo, construida con Next.js y conectada a Supabase y al backend FastAPI del proyecto.
 
-First, run the development server:
+## Funcionalidades
+
+- Feed publico de eventos.
+- Login y registro de usuarios.
+- Perfil publico y edicion de perfil.
+- Favoritos, social y ficha de eventos.
+- Vistas de creacion y edicion de eventos para usuarios con rol de empresario.
+
+## Requisitos
+
+- Node.js 18 o superior.
+- Una cuenta y proyecto de Supabase.
+- El backend del proyecto en ejecucion o accesible desde la red.
+
+## Instalacion
+
+1. Entra en la carpeta del proyecto web.
+2. Instala dependencias.
+3. Crea un archivo `.env.local` con las variables necesarias.
+4. Arranca el servidor de desarrollo.
 
 ```bash
+cd lebrijaleo
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Variables de entorno
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Define estas variables en `.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_API_URL=https://lebrijaleo-backend.onrender.com
+```
 
-## Learn More
+Si ejecutas el backend en local, cambia `NEXT_PUBLIC_API_URL` por la URL local, por ejemplo `http://127.0.0.1:8000`.
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `npm run dev` arranca la app en desarrollo.
+- `npm run build` genera la build de produccion.
+- `npm run start` ejecuta la build generada.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Estructura principal
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/app` rutas de la aplicacion.
+- `src/components` componentes reutilizables.
+- `src/lib` utilidades compartidas.
+- `src/utils/supabase` cliente de Supabase.
