@@ -33,14 +33,29 @@ type NavItemProps = {
   label: string;
 };
 
-export default function Navbar() {
+type NavbarProps = {
+  menuOpen?: boolean;
+  setMenuOpen?: (open: boolean) => void;
+};
+
+export default function Navbar({ menuOpen, setMenuOpen }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
   
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState('');
   const [role, setRole] = useState('');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [internalMenuOpen, setInternalMenuOpen] = useState(false);
+  const isControlled = typeof setMenuOpen === 'function';
+  const isMobileMenuOpen = isControlled ? !!menuOpen : internalMenuOpen;
+
+  const closeMenu = () => {
+    if (isControlled) {
+      setMenuOpen && setMenuOpen(false);
+    } else {
+      setInternalMenuOpen(false);
+    }
+  };
 
   useEffect(() => {
     async function loadAvatar() {
@@ -67,7 +82,7 @@ export default function Navbar() {
 
   // Cierra el menú al cambiar de pantalla
   useEffect(() => {
-    setIsMobileMenuOpen(false);
+    closeMenu();
   }, [pathname]);
 
   const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'U')}&background=F6EBC8&color=1e293b&size=96`;
@@ -89,7 +104,7 @@ export default function Navbar() {
   };
 
   const navigateTo = (href: NavHref) => {
-    setIsMobileMenuOpen(false);
+    closeMenu();
     router.replace(href as Href);
   };
 
@@ -113,23 +128,26 @@ export default function Navbar() {
 
   return (
     <>
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={() => setIsMobileMenuOpen(true)}
-      >
-        <MaterialIcons name="menu" size={28} color={COLORS.midnightBlue} />
-      </TouchableOpacity>
+      {/* Si no estamos controlados desde el padre, mostramos el botón flotante por compatibilidad */}
+      {!isControlled && (
+        <TouchableOpacity
+          style={styles.floatingButton}
+          onPress={() => setInternalMenuOpen(true)}
+        >
+          <MaterialIcons name="menu" size={28} color={COLORS.midnightBlue} />
+        </TouchableOpacity>
+      )}
 
       <Modal
         visible={isMobileMenuOpen}
         animationType="fade"
         transparent={true}
-        onRequestClose={() => setIsMobileMenuOpen(false)}
+        onRequestClose={closeMenu}
       >
         <View style={styles.overlay}>
           <TouchableOpacity 
             style={StyleSheet.absoluteFill} 
-            onPress={() => setIsMobileMenuOpen(false)} 
+            onPress={closeMenu} 
           />
           
           <SafeAreaView style={styles.drawer}>
@@ -137,7 +155,7 @@ export default function Navbar() {
               <TouchableOpacity onPress={() => navigateTo('/(tabs)')}>
                 <Image source={require('@/assets/images/logo.png')} style={styles.logo} resizeMode="contain" />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setIsMobileMenuOpen(false)}>
+              <TouchableOpacity onPress={closeMenu}>
                 <MaterialIcons name="close" size={28} color={COLORS.midnightBlue} />
               </TouchableOpacity>
             </View>

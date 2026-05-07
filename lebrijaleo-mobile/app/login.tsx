@@ -24,10 +24,10 @@ export default function LoginScreen() {
 
     if (error) {
       const loginErrorMessages: Record<string, string> = {
-        'Invalid login credentials': 'El correo electronico o la contrasena no son correctos.',
-        'Email not confirmed': 'Debes confirmar tu correo antes de iniciar sesion.',
+        'Invalid login credentials': 'El correo electrónico o la contraseña no son correctos.',
+        'Email not confirmed': 'Debes confirmar tu correo antes de iniciar sesión.',
       };
-      setErrorMessage(loginErrorMessages[error.message] || error.message || 'No se pudo iniciar sesion.');
+      setErrorMessage(loginErrorMessages[error.message] || error.message || 'No se pudo iniciar sesión.');
       setIsLoading(false);
       return;
     }
@@ -53,7 +53,7 @@ export default function LoginScreen() {
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder="Correo electronico"
+              placeholder="Correo electrónico"
               placeholderTextColor={LebrijaColors.textMuted}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -63,7 +63,7 @@ export default function LoginScreen() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="Contrasena"
+              placeholder="Contraseña"
               placeholderTextColor={LebrijaColors.textMuted}
               secureTextEntry
               editable={!isLoading}
@@ -77,13 +77,13 @@ export default function LoginScreen() {
             disabled={isLoading}
           >
             <Text style={authStyles.primaryButtonText}>
-              {isLoading ? 'Iniciando sesion...' : 'Iniciar sesion'}
+              {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </Text>
           </Pressable>
 
           <Text style={authStyles.footerText}>
             <Link href="/reset-password" style={authStyles.linkText}>
-              He olvidado mi contrasena
+              He olvidado mi contraseña
             </Link>
           </Text>
 

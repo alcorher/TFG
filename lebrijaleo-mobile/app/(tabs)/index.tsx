@@ -46,6 +46,7 @@ export default function HomePage() {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     async function fetchEventos() {
@@ -214,24 +215,32 @@ export default function HomePage() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Navbar />
-
       <View style={styles.mainContent}>
         <View style={[styles.header, { paddingTop: Math.max(12, insets.top * 0.25) }]}> 
           <View style={styles.logoContainer}>
             <Image source={require('@/assets/images/logo.png')} style={styles.logo} resizeMode="contain" />
           </View>
+          {/* Botón del menú integrado junto a la búsqueda */}
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => setIsMobileMenuOpen(true)}
+          >
+            <MaterialIcons name="menu" size={24} color={COLORS.slate400} />
+          </TouchableOpacity>
 
           <View style={styles.searchContainer}>
             <MaterialIcons name="search" size={24} color={COLORS.nimbusCloud} style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Buscar eventos, lugares..."
+              placeholder="Buscar eventos"
               placeholderTextColor={COLORS.slate400}
               value={searchTerm}
               onChangeText={setSearchTerm}
             />
           </View>
+          
+          {/* Pasamos el control del menú al Navbar para que use este estado */}
+          <Navbar menuOpen={isMobileMenuOpen} setMenuOpen={setIsMobileMenuOpen} />
 
           <TouchableOpacity 
             style={styles.filterButton}
@@ -339,6 +348,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.nimbusCloud,
     position: 'relative',
+  },
+  menuButton: {
+    padding: 8,
+    backgroundColor: COLORS.white,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.nimbusCloud,
+    marginRight: 8,
   },
   badge: {
     position: 'absolute',

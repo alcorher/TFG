@@ -51,11 +51,11 @@ export default function ResetPasswordScreen() {
       if (error) {
         setErrorMessage(getResetErrorMessage(error.message));
       } else {
-        setSuccessMessage('Te hemos enviado un enlace de recuperacion. Revisa tu correo y sigue los pasos.');
+        setSuccessMessage('Te hemos enviado un enlace de recuperación. Revisa tu correo y sigue los pasos.');
       }
     } catch (err) {
       console.error(err);
-      setErrorMessage('No se pudo enviar el correo de recuperacion. Revisa tu conexion e intentalo de nuevo.');
+      setErrorMessage('No se pudo enviar el correo de recuperación. Revisa tu conexión e inténtalo de nuevo.');
     } finally {
       setIsLoading(false);
     }
@@ -65,17 +65,14 @@ export default function ResetPasswordScreen() {
     setErrorMessage('');
     setSuccessMessage('');
 
-    if (!newPassword || newPassword.length < 8) {
-      // Validación de contraseña: mínimo 8 caracteres, must contain upper and lower case
-      const passwordRegex = /(?=.*[a-z])(?=.*[A-Z]).{8,}/;
-      if (!newPassword || !passwordRegex.test(newPassword)) {
-        setErrorMessage('La contraseña debe tener al menos 8 caracteres e incluir mayúsculas y minúsculas.');
-        return;
-      }
+    const passwordRegex = /(?=.*[a-z])(?=.*[A-Z]).{8,}/;
+    if (!newPassword || !passwordRegex.test(newPassword)) {
+      setErrorMessage('La contraseña debe tener al menos 8 caracteres e incluir mayúsculas y minúsculas.');
+      return;
     }
-    }
+
     if (newPassword !== confirmPassword) {
-      setErrorMessage('Las contrasenas no coinciden.');
+      setErrorMessage('Las contraseñas no coinciden.');
       return;
     }
 
@@ -85,12 +82,12 @@ export default function ResetPasswordScreen() {
       if (error) {
         setErrorMessage(getResetErrorMessage(error.message));
       } else {
-        setSuccessMessage('Contrasena actualizada correctamente. Ya puedes iniciar sesion con la nueva clave.');
+        setSuccessMessage('Contraseña actualizada correctamente. Ya puedes iniciar sesión con la nueva clave.');
         router.replace('/(tabs)');
       }
     } catch (err) {
       console.error(err);
-      setErrorMessage('No se pudo actualizar la contrasena. Intentalo de nuevo.');
+      setErrorMessage('No se pudo actualizar la contraseña. Inténtalo de nuevo.');
     } finally {
       setIsLoading(false);
     }
