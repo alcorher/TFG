@@ -82,6 +82,12 @@ export default function LoginScreen() {
           </Pressable>
 
           <Text style={authStyles.footerText}>
+            <Link href="/reset-password" style={authStyles.linkText}>
+              He olvidado mi contrasena
+            </Link>
+          </Text>
+
+          <Text style={authStyles.footerText}>
             No tienes cuenta?{' '}
             <Link href="/register" style={authStyles.linkText}>
               Registrate

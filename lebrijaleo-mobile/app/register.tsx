@@ -20,7 +20,14 @@ export default function RegisterScreen() {
     setIsLoading(true);
     setErrorMessage('');
     setSuccessMessage('');
-
+    
+    // Validación de contraseña: al menos 8 caracteres, mayúsculas y minúsculas
+    const passwordRegex = /(?=.*[a-z])(?=.*[A-Z]).{8,}/;
+    if (!passwordRegex.test(password)) {
+      setErrorMessage('La contraseña debe tener al menos 8 caracteres e incluir mayúsculas y minúsculas.');
+      setIsLoading(false);
+      return;
+    }
     const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,

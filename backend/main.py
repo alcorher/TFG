@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from datetime import date, time, datetime
+import re
 from typing import Optional
 import uuid 
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Header, FastAPI
@@ -66,6 +67,20 @@ class EventoCreate(BaseModel):
     categoria: str
     aforo_max: Optional[int] = None
     estado: str = 'Publicado'  # Cambia 'Publicado' por la palabra exacta de tu ENUM que arreglaste antes
+
+
+class PasswordPayload(BaseModel):
+    password: str
+
+
+@app.post("/api/validate-password")
+def validate_password(payload: PasswordPayload):
+    """Valida la contraseña según la política: mínimo 8 caracteres, must contain upper and lower case."""
+    pwd = (payload.password or "")
+    pattern = re.compile(r'^(?=.*[a-z])(?=.*[A-Z]).{8,}$')
+    if not pattern.match(pwd):
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 8 caracteres e incluir mayúsculas y minúsculas.")
+    return {"valid": True}
 
 
 def validar_fecha_evento(fecha_str: str):
