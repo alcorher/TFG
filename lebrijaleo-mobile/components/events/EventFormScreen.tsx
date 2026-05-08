@@ -252,15 +252,24 @@ export function EventFormScreen({
   const buildFormData = async (): Promise<FormData> => {
     const multipart = new FormData();
     if (imageAsset?.uri) {
-      try {
-        const response = await fetch(imageAsset.uri);
-        const blob = await response.blob();
-        const filename =
-          imageAsset.fileName || `event-banner.${imageAsset.mimeType?.split('/')[1] || 'jpg'}`;
-        multipart.append('banner', blob, filename);
-      } catch (error) {
-        console.error('Error converting image URI to blob:', error);
-        throw new Error('No se pudo procesar la imagen. Intenta de nuevo.');
+      const filename =
+        imageAsset.fileName || `event-banner.${imageAsset.mimeType?.split('/')[1] || 'jpg'}`;
+
+      if (Platform.OS === 'web') {
+        try {
+          const response = await fetch(imageAsset.uri);
+          const blob = await response.blob();
+          multipart.append('banner', blob, filename);
+        } catch (error) {
+          console.error('Error converting image URI to blob:', error);
+          throw new Error('No se pudo procesar la imagen. Intenta de nuevo.');
+        }
+      } else {
+        multipart.append('banner', {
+          uri: imageAsset.uri,
+          name: filename,
+          type: imageAsset.mimeType || 'image/jpeg',
+        } as any);
       }
     }
 

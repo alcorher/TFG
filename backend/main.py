@@ -28,7 +28,7 @@ app = FastAPI(
 )
 
 # Origenes permitidos en desarrollo web/movil (Next.js y Expo)
-ALLOWED_ORIGINS = [
+DEFAULT_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:19006",
@@ -38,10 +38,26 @@ ALLOWED_ORIGINS = [
     "https://lebrijaleo.vercel.app",
 ]
 
+
+def _load_allowed_origins() -> list[str]:
+    custom_origins = [
+        origin.strip()
+        for origin in os.getenv("CORS_ORIGINS", "").split(",")
+        if origin.strip()
+    ]
+
+    origins = DEFAULT_ALLOWED_ORIGINS[:]
+    for origin in custom_origins:
+        if origin not in origins:
+            origins.append(origin)
+
+    return origins
+
 # Configurar CORS 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=_load_allowed_origins(),
+    allow_origin_regex=r"https://.*\.vercel\.app$|http://(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
