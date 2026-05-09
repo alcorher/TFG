@@ -222,6 +222,13 @@ export default function ProfilePage() {
   };
 
   const handleDownloadStats = async () => {
+    setShowActionPanel(false);
+    Alert.alert(
+      'Disponible solo en web',
+      'La descarga de estadisticas solo se puede realizar desde la web: lebrijaleo.vercel.app',
+    );
+    return;
+
     setStatsLoading(true);
 
     try {

@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Modal,
+  Platform,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -108,6 +110,15 @@ async function fetchOrganizerStats(userId: string, token: string) {
   }
 
   return (await response.json()) as OrganizerStats;
+}
+
+async function shareStatsFile(fileUri: string, fileName: string) {
+  const shareUrl = Platform.OS === 'android' ? await FileSystem.getContentUriAsync(fileUri) : fileUri;
+
+  await Share.share({
+    url: shareUrl,
+    title: fileName,
+  });
 }
 
 function OrganizerCard({
@@ -350,6 +361,11 @@ export default function MyOrganizersScreen() {
   };
 
   const handleExportAll = async () => {
+    Alert.alert(
+      'Disponible solo en web',
+      'La descarga de estadisticas solo se puede realizar desde la web: lebrijaleo.vercel.app',
+    );
+    return;
     if (!token) {
       showToast('error', 'No se pudo obtener la sesión del usuario.');
       return;
@@ -392,13 +408,7 @@ export default function MyOrganizersScreen() {
         encoding: FileSystem.EncodingType.UTF8,
       });
 
-      const shareUri = await FileSystem.getContentUriAsync(fileUri);
-
-      await Share.share({
-        url: shareUri,
-        message: 'Comparte o guarda las estadísticas de los organizadores.',
-        title: `estadisticas_organizadores_${fecha}.txt`,
-      });
+      await shareStatsFile(fileUri, `estadisticas_organizadores_${fecha}.txt`);
 
       showToast('success', `Exportadas estadísticas de ${stats.length} organizador${stats.length !== 1 ? 'es' : ''}.`);
     } catch (error) {
