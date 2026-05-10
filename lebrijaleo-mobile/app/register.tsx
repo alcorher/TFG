@@ -20,7 +20,14 @@ export default function RegisterScreen() {
     setIsLoading(true);
     setErrorMessage('');
     setSuccessMessage('');
-
+    
+    // Validación de contraseña: al menos 8 caracteres, mayúsculas y minúsculas
+    const passwordRegex = /(?=.*[a-z])(?=.*[A-Z]).{8,}/;
+    if (!passwordRegex.test(password)) {
+      setErrorMessage('La contraseña debe tener al menos 8 caracteres e incluir mayúsculas y minúsculas.');
+      setIsLoading(false);
+      return;
+    }
     const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -38,7 +45,7 @@ export default function RegisterScreen() {
       return;
     }
 
-    setSuccessMessage('Cuenta creada con exito. Revisa tu correo o inicia sesion.');
+    setSuccessMessage('Cuenta creada con éxito. Revisa tu correo o inicia sesión.');
     setIsLoading(false);
     setTimeout(() => {
       router.replace('/login');
@@ -54,7 +61,7 @@ export default function RegisterScreen() {
         </View>
         <View style={authStyles.card}>
           <Text style={authStyles.title}>Crea tu cuenta</Text>
-          <Text style={authStyles.subtitle}>Registrate para comenzar a explorar</Text>
+          <Text style={authStyles.subtitle}>Regístrate para comenzar a explorar</Text>
           {errorMessage ? <Text style={authStyles.messageError}>{errorMessage}</Text> : null}
           {successMessage ? <Text style={authStyles.messageSuccess}>{successMessage}</Text> : null}
 
@@ -80,7 +87,7 @@ export default function RegisterScreen() {
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder="Correo electronico"
+              placeholder="Correo electrónico"
               placeholderTextColor={LebrijaColors.textMuted}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -90,7 +97,7 @@ export default function RegisterScreen() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="Contrasena"
+              placeholder="Contraseña"
               placeholderTextColor={LebrijaColors.textMuted}
               secureTextEntry
               editable={!isLoading}
@@ -111,7 +118,7 @@ export default function RegisterScreen() {
           <Text style={authStyles.footerText}>
             Ya tienes cuenta?{' '}
             <Link href="/login" style={authStyles.linkText}>
-              Inicia sesion
+              Inicia sesión
             </Link>
           </Text>
         </View>

@@ -20,7 +20,7 @@ import EventCard from '@/components/events/EventCard';
 import { COLORS } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://lebrijaleo-backend.onrender.com';
 
 type UserRole = 'Cliente' | 'Empresario' | 'Administrador' | string;
 
@@ -222,6 +222,13 @@ export default function ProfilePage() {
   };
 
   const handleDownloadStats = async () => {
+    setShowActionPanel(false);
+    Alert.alert(
+      'Disponible solo en web',
+      'La descarga de estadisticas solo se puede realizar desde la web: lebrijaleo.vercel.app',
+    );
+    return;
+
     setStatsLoading(true);
 
     try {
@@ -249,8 +256,10 @@ export default function ProfilePage() {
         encoding: FileSystem.EncodingType.UTF8,
       });
 
+      const shareUri = await FileSystem.getContentUriAsync(fileUri);
+
       await Share.share({
-        url: fileUri,
+        url: shareUri,
         message: 'Comparte o guarda tus estadísticas de organizador.',
         title: `estadisticas_${safeName}.txt`,
       });

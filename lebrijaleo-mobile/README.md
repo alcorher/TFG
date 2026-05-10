@@ -1,50 +1,56 @@
-# Welcome to your Expo app 👋
+# LebriJaleo Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicacion movil de LebriJaleo construida con Expo Router. Comparte backend y autenticacion con la version web del proyecto.
 
-## Get started
+## Funcionalidades
 
-1. Install dependencies
+- Inicio con listado de eventos.
+- Detalle de evento, favoritos y edicion para usuarios autorizados.
+- Favoritos, social, perfil y edicion de perfil.
+- Puntos de gestion de eventos y organizadores para roles con permisos.
+- Navegacion por tabs con rutas compartidas entre web y movil.
 
-   ```bash
-   npm install
-   ```
+## Requisitos
 
-2. Start the app
+- Node.js 18 o superior.
+- Expo CLI disponible via `npx`.
+- Una cuenta y proyecto de Supabase.
+- El backend del proyecto accesible desde la app.
 
-   ```bash
-   npx expo start
-   ```
+## Instalacion
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+1. Entra en la carpeta del proyecto movil.
+2. Instala dependencias.
+3. Crea un archivo `.env` a partir de `.env.example`.
+4. Arranca Expo.
 
 ```bash
-npm run reset-project
+cd lebrijaleo-mobile
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Variables de entorno
 
-## Learn more
+Define estas variables en `.env`:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+EXPO_PUBLIC_SUPABASE_URL=
+EXPO_PUBLIC_SUPABASE_ANON_KEY=
+EXPO_PUBLIC_API_URL=https://lebrijaleo-backend.onrender.com
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Si ejecutas el backend en local, cambia `EXPO_PUBLIC_API_URL` por la URL local, por ejemplo `http://127.0.0.1:8000`.
 
-## Join the community
+## Scripts
 
-Join our community of developers creating universal apps.
+- `npm start` arranca Expo.
+- `npm run android` abre la app en Android.
+- `npm run ios` abre la app en iOS.
+- `npm run web` abre la app en navegador.
+- `npm run lint` ejecuta la comprobacion de estilo.
+- `npm run reset-project` restaura la estructura base de Expo.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Entorno de desarrollo
+
+La app puede abrirse con Expo Go, un development build o en web, segun la opcion que elijas al iniciar `expo start`.

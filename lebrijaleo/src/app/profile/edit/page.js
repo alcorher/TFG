@@ -21,6 +21,11 @@ export default function EditProfilePage() {
   const supabase = createClient();
   const [showMobilePanel, setShowMobilePanel] = useState(false);
 
+  const handleChangePassword = () => {
+    setShowMobilePanel(false);
+    router.push('/reset-password');
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
@@ -35,13 +40,16 @@ export default function EditProfilePage() {
       <EditProfileForm onOpenMobilePanel={() => setShowMobilePanel(true)} />
 
       {/* SIDEBAR DERECHO (Ajustes de Cuenta - Específico de esta página) */}
-      <aside className="w-80 bg-white border-l border-slate-100 p-6 flex flex-col gap-8 h-full shadow-sm overflow-y-auto hidden xl:flex shrink-0">
+      <aside className="w-80 bg-white border-l border-slate-100 p-6 gap-8 h-full shadow-sm overflow-y-auto shrink-0 max-xl:hidden xl:flex xl:flex-col">
         <div className="bg-white rounded-2xl flex flex-col gap-3">
           <h3 className="text-midnight-blue font-bold text-lg mb-2">
             Ajustes de Cuenta
           </h3>
 
-          <button className="w-full py-3 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-sm transition-all flex items-center justify-start gap-3">
+          <button
+            onClick={handleChangePassword}
+            className="w-full py-3 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-sm transition-all flex items-center justify-start gap-3"
+          >
             <MdLockReset className="text-xl text-slate-400" />
             <span>Cambiar contraseña</span>
           </button>
@@ -107,19 +115,16 @@ export default function EditProfilePage() {
             </button>
           </div>
           <div className="flex flex-col gap-3">
-            <button className="w-full py-3 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-sm transition-all flex items-center justify-start gap-3">
+            <button
+              onClick={handleChangePassword}
+              className="w-full py-3 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-sm transition-all flex items-center justify-start gap-3"
+            >
               <MdLockReset className="text-xl text-slate-400" />
               <span>Cambiar contraseña</span>
             </button>
-            <button className="w-full py-3 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-sm transition-all flex items-center justify-start gap-3">
-              <MdSecurity className="text-xl text-slate-400" />
-              <span>Privacidad</span>
-            </button>
-            <button className="w-full py-3 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-sm transition-all flex items-center justify-start gap-3">
-              <MdNotifications className="text-xl text-slate-400" />
-              <span>Notificaciones</span>
-            </button>
-            <div className="h-px bg-slate-100 my-2"></div>
+         
+         
+            <div className="h-px bg-slate-100 "></div>
             <button 
               onClick={handleLogout}
               className="w-full py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-sm transition-all flex items-center justify-start gap-3 border border-red-100"

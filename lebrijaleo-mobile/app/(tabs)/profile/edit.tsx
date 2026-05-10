@@ -20,8 +20,9 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { COLORS } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
+import { useCallback } from 'react';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://lebrijaleo-backend.onrender.com';
 
 type UserRole = 'Cliente' | 'Empresario' | 'Administrador' | string;
 
@@ -299,6 +300,11 @@ export default function ProfileEditScreen() {
     router.replace('/login');
   };
 
+  const handleChangePassword = useCallback(async () => {
+    // Navega a la pantalla de cambio/restablecimiento de contraseña
+    router.push('/reset-password');
+  }, [router]);
+
   const handleSupport = async () => {
     const url =
       'mailto:acorher2911@g.educaand.es?subject=Soporte LebriJaleo&body=Hola, necesito ayuda con mi perfil en LebriJaleo.';
@@ -479,7 +485,7 @@ export default function ProfileEditScreen() {
 
           <View style={styles.accountCard}>
             <Text style={styles.accountTitle}>Ajustes de Cuenta</Text>
-            <TouchableOpacity style={styles.accountRow}>
+            <TouchableOpacity style={styles.accountRow} onPress={handleChangePassword}>
               <MaterialIcons name="lock-reset" size={20} color={COLORS.slate500} />
               <Text style={styles.accountRowText}>Cambiar contrasena</Text>
             </TouchableOpacity>

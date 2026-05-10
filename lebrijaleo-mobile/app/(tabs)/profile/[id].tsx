@@ -13,13 +13,12 @@ import {
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as FileSystem from 'expo-file-system/legacy';
 
 import EventCard from '@/components/events/EventCard';
 import { COLORS } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://lebrijaleo-backend.onrender.com';
 
 type UserRole = 'Cliente' | 'Empresario' | 'Administrador' | string;
 
@@ -40,74 +39,6 @@ type PublicProfile = {
   rol?: UserRole;
   creado_por?: string | null;
 };
-
-type OrganizerStats = {
-  nombre: string;
-  username?: string;
-  seguidores_totales: number;
-  likes_totales: number;
-  num_eventos: number;
-  evento_top?: {
-    nombre?: string;
-    likes?: number;
-  };
-  eventos?: Array<{
-    nombre: string;
-    likes: number;
-  }>;
-};
-
-function generateStatsTxt(stats: OrganizerStats) {
-  const fecha = new Date().toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-
-  let txt = '';
-  txt += '=============================================\n';
-  txt += '  ESTADISTICAS DE ORGANIZADOR - LebriJaleo\n';
-  txt += '=============================================\n';
-  txt += `Organizador : ${stats.nombre}\n`;
-  if (stats.username) txt += `Usuario     : @${stats.username}\n`;
-  txt += `Fecha       : ${fecha}\n\n`;
-  txt += '--- RESUMEN ---\n';
-  txt += `Seguidores totales   : ${stats.seguidores_totales}\n`;
-  txt += `Likes totales        : ${stats.likes_totales}\n`;
-  txt += `Eventos publicados   : ${stats.num_eventos}\n\n`;
-
-  if (stats.evento_top?.nombre) {
-    txt += '--- EVENTO ESTRELLA ---\n';
-    txt += `Nombre : ${stats.evento_top.nombre}\n`;
-    txt += `Likes  : ${stats.evento_top.likes ?? 0}\n\n`;
-  }
-
-  if (stats.eventos && stats.eventos.length > 0) {
-    txt += '--- DESGLOSE POR EVENTO ---\n';
-    [...stats.eventos]
-      .sort((a, b) => b.likes - a.likes)
-      .forEach((evento, index) => {
-        txt += `  ${index + 1}. ${evento.nombre} - ${evento.likes} like${evento.likes !== 1 ? 's' : ''}\n`;
-      });
-    txt += '\n';
-  }
-
-  txt += '=============================================\n';
-  return txt;
-}
-
-async function fetchOrganizerStats(userId: string, token: string) {
-  const response = await fetch(`${API_URL}/api/estadisticas-organizador/${userId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!response.ok) {
-    const errorPayload = (await response.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(errorPayload.detail || 'Error al obtener estadisticas');
-  }
-
-  return (await response.json()) as OrganizerStats;
-}
 
 export default function PublicProfileScreen() {
   const router = useRouter();
@@ -321,42 +252,11 @@ export default function PublicProfileScreen() {
   };
 
   const handleDownloadStats = async () => {
-    if (!id) return;
-
-    setStatsLoading(true);
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-
-      const stats = await fetchOrganizerStats(id, session.access_token);
-      const txtContent = generateStatsTxt(stats);
-      const safeName = (stats.nombre || 'organizador').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_');
-
-      if (!FileSystem.documentDirectory) {
-        throw new Error('No hay un directorio de documentos disponible');
-      }
-
-      const fileUri = `${FileSystem.documentDirectory}estadisticas_${safeName}.txt`;
-      await FileSystem.writeAsStringAsync(fileUri, txtContent, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
-
-      Alert.alert('Estadisticas guardadas', `Se ha generado el archivo en:\n${fileUri}`);
-    } catch (downloadError) {
-      console.error('Error descargando estadisticas:', downloadError);
-      Alert.alert(
-        'Error',
-        downloadError instanceof Error ? downloadError.message : 'No se pudieron descargar las estadisticas.',
-      );
-    } finally {
-      setStatsLoading(false);
-    }
+    setShowActionPanel(false);
+    Alert.alert(
+      'Disponible solo en web',
+      'La descarga de estadisticas solo se puede realizar desde la web: lebrijaleo.vercel.app',
+    );
   };
 
   if (isLoading) {

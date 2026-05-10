@@ -9,7 +9,9 @@ import {
   MdCalendarMonth, MdTune, MdGroups, MdVisibility, 
   MdLocalActivity, MdBarChart 
 } from "react-icons/md";
-import { FaInstagram, FaFacebookF, FaTwitter } from "react-icons/fa";
+import { FaAndroid } from "react-icons/fa";
+
+const ANDROID_APP_URL = "https://expo.dev/artifacts/eas/hSGaZpr2WxX4mZvAZw3GpS.apk";
 
 export default function LandingPage() {
   const [hasSession, setHasSession] = useState(null);
@@ -62,6 +64,15 @@ export default function LandingPage() {
                   Iniciar Sesión
                 </Link>
               )}
+              <a
+                href={ANDROID_APP_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 border border-midnight-blue/15 bg-white text-midnight-blue text-sm font-bold rounded-full hover:bg-cloud-dancer transition-all"
+              >
+                <FaAndroid className="text-base" />
+                Descargar App
+              </a>
               <Link href="/home" className="px-5 py-2.5 bg-midnight-blue text-white text-sm font-bold rounded-full hover:bg-black transition-all shadow-lg shadow-midnight-blue/20">
                 Ver Cartelera
               </Link>
@@ -93,6 +104,15 @@ export default function LandingPage() {
             Descubre, vive y comparte la cultura, gastronomía y tradiciones de nuestra ciudad. Desde las Cruces de Mayo hasta la ruta de la tapa.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href={ANDROID_APP_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full sm:w-auto px-8 py-4 bg-white text-midnight-blue font-bold rounded-xl hover:bg-cloud-dancer hover:scale-105 transition-all shadow-[0_0_30px_rgba(255,255,255,0.22)] flex items-center justify-center gap-2"
+            >
+              <FaAndroid className="text-xl" />
+              Descargar app Android
+            </a>
             <Link href="/home" className="w-full sm:w-auto px-8 py-4 bg-lemon-icing text-midnight-blue font-bold rounded-xl hover:bg-white hover:scale-105 transition-all shadow-[0_0_30px_rgba(246,235,200,0.3)] flex items-center justify-center gap-2">
               <MdExplore className="text-xl" />
               Explorar Cartelera
@@ -102,6 +122,9 @@ export default function LandingPage() {
               Soy Organizador
             </a>
           </div>
+          <p className="mt-4 text-sm text-white/70 font-medium">
+            Disponible ya en Android mediante descarga directa del APK.
+          </p>
         </div>
         
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50 animate-bounce">

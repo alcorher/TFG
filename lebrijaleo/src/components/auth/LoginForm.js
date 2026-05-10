@@ -17,7 +17,9 @@ export default function LoginForm() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResetLoading, setIsResetLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -26,6 +28,35 @@ export default function LoginForm() {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (errorMessage) setErrorMessage("");
+    if (successMessage) setSuccessMessage("");
+  };
+
+  const handlePasswordReset = async () => {
+    if (!formData.email.trim()) {
+      setErrorMessage("Introduce tu correo para enviarte el enlace de cambio de contraseña.");
+      setSuccessMessage("");
+      return;
+    }
+
+    setIsResetLoading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    const redirectTo = `${window.location.origin}/reset-password`;
+    const { error } = await supabase.auth.resetPasswordForEmail(formData.email.trim(), {
+      redirectTo,
+    });
+
+    if (error) {
+      setErrorMessage(
+        error.message || "No se ha podido enviar el correo de recuperación. Inténtalo de nuevo."
+      );
+      setIsResetLoading(false);
+      return;
+    }
+
+    setSuccessMessage("Te hemos enviado un correo para cambiar tu contraseña.");
+    setIsResetLoading(false);
   };
 
   const handleSubmit = async (e) => {
@@ -60,6 +91,13 @@ export default function LoginForm() {
         {errorMessage && (
           <div className="p-3 bg-red-100 border border-red-400 text-red-700 text-sm rounded-xl">
             {errorMessage}
+          </div>
+        )}
+
+        {/* Mensaje de Éxito */}
+        {successMessage && (
+          <div className="p-3 bg-green-100 border border-green-300 text-green-700 text-sm rounded-xl">
+            {successMessage}
           </div>
         )}
 
@@ -125,12 +163,14 @@ export default function LoginForm() {
             </button>
           </div>
           <div className="flex justify-end mt-1">
-            <a
-              href="#"
-              className="text-sm font-medium text-slate-500 hover:text-[#C4B27A] transition-colors"
+            <button
+              type="button"
+              onClick={handlePasswordReset}
+              disabled={isLoading || isResetLoading}
+              className="text-sm font-medium text-slate-500 hover:text-[#C4B27A] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              ¿Olvidaste tu contraseña?
-            </a>
+              {isResetLoading ? "Enviando correo..." : "¿Olvidaste tu contraseña?"}
+            </button>
           </div>
         </div>
 

@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from datetime import date, time, datetime
+import re
 from typing import Optional
 import uuid 
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Header, FastAPI
@@ -27,19 +28,36 @@ app = FastAPI(
 )
 
 # Origenes permitidos en desarrollo web/movil (Next.js y Expo)
-ALLOWED_ORIGINS = [
+DEFAULT_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:19006",
     "http://127.0.0.1:19006",
     "http://localhost:8081",
     "http://127.0.0.1:8081",
+    "https://lebrijaleo.vercel.app",
 ]
+
+
+def _load_allowed_origins() -> list[str]:
+    custom_origins = [
+        origin.strip()
+        for origin in os.getenv("CORS_ORIGINS", "").split(",")
+        if origin.strip()
+    ]
+
+    origins = DEFAULT_ALLOWED_ORIGINS[:]
+    for origin in custom_origins:
+        if origin not in origins:
+            origins.append(origin)
+
+    return origins
 
 # Configurar CORS 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=_load_allowed_origins(),
+    allow_origin_regex=r"https://.*\.vercel\.app$|http://(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -65,6 +83,20 @@ class EventoCreate(BaseModel):
     categoria: str
     aforo_max: Optional[int] = None
     estado: str = 'Publicado'  # Cambia 'Publicado' por la palabra exacta de tu ENUM que arreglaste antes
+
+
+class PasswordPayload(BaseModel):
+    password: str
+
+
+@app.post("/api/validate-password")
+def validate_password(payload: PasswordPayload):
+    """Valida la contraseña según la política: mínimo 8 caracteres, must contain upper and lower case."""
+    pwd = (payload.password or "")
+    pattern = re.compile(r'^(?=.*[a-z])(?=.*[A-Z]).{8,}$')
+    if not pattern.match(pwd):
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 8 caracteres e incluir mayúsculas y minúsculas.")
+    return {"valid": True}
 
 
 def validar_fecha_evento(fecha_str: str):

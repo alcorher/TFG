@@ -9,7 +9,7 @@ import {
   MdDashboard, MdFavorite, MdGroups, MdAddCircle, MdCalendarMonth, MdSettings, MdGroup, MdMenu, MdClose
 } from "react-icons/md";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://lebrijaleo-backend.onrender.com';
 
 export default function Navbar() {
   const pathname = usePathname();

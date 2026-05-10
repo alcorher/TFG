@@ -53,7 +53,7 @@ export default function EventDetailPage({ params }) {
     const fetchEventData = async () => {
       try {
         const API_URL =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+          process.env.NEXT_PUBLIC_API_URL || "https://lebrijaleo-backend.onrender.com";
 
         // Obtener usuario actual
         const { data: { session } } = await supabase.auth.getSession();
@@ -105,7 +105,7 @@ export default function EventDetailPage({ params }) {
     setIsTogglingFav(true);
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://lebrijaleo-backend.onrender.com";
       const { data: { session } } = await supabase.auth.getSession();
 
       const response = await fetch(`${API_URL}/api/eventos/${id}/favoritos`, {
@@ -134,7 +134,7 @@ export default function EventDetailPage({ params }) {
     if (!confirmed) return;
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://lebrijaleo-backend.onrender.com";
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {

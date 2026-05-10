@@ -49,7 +49,7 @@ export default function EditEventPage({ params }) {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://lebrijaleo-backend.onrender.com";
 
         const response = await fetch(`${API_URL}/api/eventos/${id}`);
         if (!response.ok) {
@@ -176,7 +176,7 @@ export default function EditEventPage({ params }) {
         return;
       }
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://lebrijaleo-backend.onrender.com";
 
       const dataToSend = new FormData();
       if (imageFile) dataToSend.append("banner", imageFile);
@@ -232,7 +232,7 @@ export default function EditEventPage({ params }) {
         return;
       }
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://lebrijaleo-backend.onrender.com";
       const response = await fetch(`${API_URL}/api/eventos/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
